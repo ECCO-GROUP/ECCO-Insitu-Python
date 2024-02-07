@@ -67,7 +67,7 @@ def MITprof_read(file):
 
 def MITprof_write_to_nc(MITprof):
 
-    dest_dir = "C:\\Users\\szswe\\Desktop"
+    dest_dir = "/home/sweet/Desktop/ECCO-Insitu-Ian/Python-Dest"
 
     nc_path = os.path.join(dest_dir, "step_one_2.nc")
     
@@ -171,16 +171,9 @@ def NODC_pipeline(dest_dir, file_type, input_dir):
                 raise Exception("No info in NetCDF files")
     else:
         raise Exception("No NetCDF files found")
-    """
-    TODO:
-    - clean up code
-    - check generated NETCDF for data comparability (all parems)
-    - check output for that array stuff "verify that our little trick works in 4 parts of the earth" against matlab again too
-    - make sure you're not copying unneeded variables (all that grid shit in first if statement)
-    - make 270 and 90 consistent 
-    """
+
     #print(MITprofs)
-    MITprof_write_to_nc(MITprofs)
+    #MITprof_write_to_nc(MITprofs)
 
     return
     """
@@ -297,7 +290,7 @@ if __name__ == '__main__':
     #make_figs= 0
 
     # needed: where the .nc files are located
-    input_dir = "C:\\Users\\szswe\\Desktop\\ECCO_processing\\converted_to_MITprof"
+    input_dir = "/home/sweet/Desktop/ECCO-Insitu-Ian/Original-Matlab-Dest/converted_to_MITprof"
 
     # using 1997.nc (same file running in MATLAB pipeline)
     dest_dir = 90

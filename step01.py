@@ -373,7 +373,7 @@ def sph2cart(az, elev, r):
 
 def load_llc90_grid():
 
-    grootdir = 'C:\\Users\\szswe\\Desktop\\'
+    grootdir = '/home/sweet/Desktop/ECCO-Insitu-Ian/Matlab-Dependents'
 
     """
     %% BATHY
@@ -386,7 +386,7 @@ def load_llc90_grid():
         bathy_90_fname = os.path.join(grootdir, 'grid_llc90', 'bathy_eccollc_90x50_min2pts.bin')
 
     if BATHY_CODE == 1:
-        bathy_90_fname = os.path.join('C:\\Users\\szswe\\Desktop\\', 'grid_llc90', 'bathy_with_ice_shelf','BATHY_ICE_SHELF_CAVITY_PLUS_ICE_FRONT_LLC_0090.bin')
+        bathy_90_fname = os.path.join('/home/sweet/Desktop/ECCO-Insitu-Ian/Matlab-Dependents', 'grid_llc90', 'bathy_with_ice_shelf','BATHY_ICE_SHELF_CAVITY_PLUS_ICE_FRONT_LLC_0090.bin')
 
     # 1 Good 
     # bathy_90 = readbin(bathy_90_fname,[llcN 13*llcN 1],1,'real*4',0,'ieee-be')
@@ -832,7 +832,8 @@ def get_profpoint_llc_ian(lon_llc, lat_llc, mask_llc, MITprof):
 
     # F_grid_PF_XYZ_to_INDEX = scatteredInterpolant(model_xyz, AI_grid_pf,'nearest')
     F_grid_PF_XYZ_to_INDEX = griddata(model_xyz, AI_grid_pf, (prof_x, prof_y, prof_z), method='nearest')
-
+    F_grid_PF_XYZ_to_INDEX = F_grid_PF_XYZ_to_INDEX.astype(int)
+    
     # creating new prof_point field in dict and populating
     MITprof.update({"prof_point": F_grid_PF_XYZ_to_INDEX})
     

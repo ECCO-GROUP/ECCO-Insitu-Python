@@ -694,10 +694,10 @@ if __name__ == '__main__':
     dest_dir = args.dest_dir
     input_dir = args.input_dir
     """
-    #input_dir = "C:\\Users\\szswe\\Desktop\\science_logs\\p"    
-    #dest_dir = "C:\\Users\\szswe\\Desktop\\ECCO_dest"
+    #input_dir = "/home/sweet/Desktop/ECCO-Insitu-Ian/CSV_preprocessing_Python/Small Dataset/Data"    
+    #dest_dir = "/home/sweet/Desktop/ECCO-Insitu-Ian/CSV_preprocessing_Python/Small Dataset/Output"
 
-    input_dir = "C:\\Users\\szswe\\Desktop\\science_logs"
-    dest_dir = "C:\\Users\\szswe\\Desktop\\ECCO_dest\\big_dataset"
+    input_dir = "/home/sweet/Desktop/ECCO-Insitu-Ian/CSV_preprocessing_Python/Big Dataset/Data"
+    dest_dir = "/home/sweet/Desktop/ECCO-Insitu-Ian/CSV_preprocessing_Python/Big Dataset/Output"
     csv_processing(dest_dir, input_dir)
     #main(dest_dir, input_dir)

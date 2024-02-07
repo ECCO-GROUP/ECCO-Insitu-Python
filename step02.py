@@ -67,7 +67,7 @@ def update_spatial_bin_index_on_prepared_profiles(run_code, MITprofs):
     if run_code == 10242 or run_code == 2562:
             
         # the bin data have to be projected to the model grid;
-        bin_dir = 'C:\\Users\\szswe\\Desktop\\grid_llc90\\sphere_point_distribution'
+        bin_dir = '/home/sweet/Desktop/ECCO-Insitu-Ian/Matlab-Dependents/grid_llc90/sphere_point_distribution'
         bin_file_1 = os.path.join(bin_dir, 'llc090_sphere_point_n_10242_ids.bin')
         bin_file_2 =  os.path.join(bin_dir, 'llc090_sphere_point_n_02562_ids.bin')
 
@@ -134,11 +134,11 @@ def update_spatial_bin_index_on_prepared_profiles(run_code, MITprofs):
     if bin_llcN  == 270:
         lon_270, lat_270, blank_270, wet_ins_270_k, X_270, Y_270, Z_270, bathy_270, good_ins_270 = load_llc270_grid()
         F = make_F_llc270_ALL_INS_SURF_XYZ_to_INDEX(X_270, Y_270, Z_270, bathy_270, good_ins_270)
-        X = X_270
-        Y = Y_270
-        Z = Z_270
-        lon_llc = lon_270
-        lat_llc = lat_270
+        X = X_270.flatten(order = 'F')
+        Y = Y_270.flatten(order = 'F')
+        Z = Z_270.flatten(order = 'F')
+        lon_llc = lon_270.flatten(order = 'F')
+        lat_llc = lat_270.flatten(order = 'F')
         #NOTE: not sure if deep copy is needed? check to see if we're changing these vals
  
     # verify that our little trick works in 4 parts of the earth'
@@ -158,7 +158,7 @@ def update_spatial_bin_index_on_prepared_profiles(run_code, MITprofs):
             test_lon = 60
         test_x, test_y, test_z = sph2cart(test_lon*deg2rad, test_lat*deg2rad, 1)
         testarr = np.asarray([test_x, test_y, test_z])
-        test_ind = F(testarr)[0]
+        test_ind = int(F(testarr)[0])
 
         print("=================")
         print("i = {} | test_ind = {} | lat = {} | lon = {}".format(i, test_ind, test_lat, test_lon))
@@ -180,6 +180,8 @@ def update_spatial_bin_index_on_prepared_profiles(run_code, MITprofs):
     
     # map a grid index to each profile.
     prof_llcN_cell_index = F(np.column_stack((prof_x, prof_y, prof_z)))
+    prof_llcN_cell_index  = prof_llcN_cell_index.astype(int)
+
     """
     if 'prof_gci' in MITprof:
         if unique(MITprof.prof_gci - prof_llcN_cell_index) ~= 0
