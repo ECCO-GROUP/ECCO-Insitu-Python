@@ -1,5 +1,7 @@
+import argparse
+import glob
 import os
-from step01 import load_llc90_grid, load_llc270_grid, sph2cart
+from tools import load_llc90_grid, load_llc270_grid, sph2cart, MITprof_read
 from scipy.interpolate import griddata
 import numpy as np
 
@@ -60,7 +62,7 @@ class TriScatteredInterp:
     def __call__(self, points):
         return griddata(self.X, self.V, points, method=self.method)
     
-def update_spatial_bin_index_on_prepared_profiles(run_code, MITprofs):
+def update_spatial_bin_index_on_prepared_profiles(run_code, MITprofs, grid_dir):
 
     make_figs = 0
 
@@ -110,7 +112,7 @@ def update_spatial_bin_index_on_prepared_profiles(run_code, MITprofs):
 
     if bin_llcN  == 90:
   
-        lon_90, lat_90, blank_90, wet_ins_90_k, RAC_90_pf, bathy_90, good_ins_90, X_90, Y_90, Z_90 = load_llc90_grid()
+        lon_90, lat_90, blank_90, wet_ins_90_k, RAC_90_pf, bathy_90, good_ins_90, X_90, Y_90, Z_90 = load_llc90_grid(grid_dir)
         """
         Cant load matlab file
         cd(llc90_grid_dir)
@@ -132,7 +134,7 @@ def update_spatial_bin_index_on_prepared_profiles(run_code, MITprofs):
         lat_llc = lat_90.flatten(order = 'F')
     
     if bin_llcN  == 270:
-        lon_270, lat_270, blank_270, wet_ins_270_k, X_270, Y_270, Z_270, bathy_270, good_ins_270 = load_llc270_grid()
+        lon_270, lat_270, blank_270, wet_ins_270_k, X_270, Y_270, Z_270, bathy_270, good_ins_270 = load_llc270_grid(grid_dir)
         F = make_F_llc270_ALL_INS_SURF_XYZ_to_INDEX(X_270, Y_270, Z_270, bathy_270, good_ins_270)
         X = X_270.flatten(order = 'F')
         Y = Y_270.flatten(order = 'F')
@@ -142,7 +144,7 @@ def update_spatial_bin_index_on_prepared_profiles(run_code, MITprofs):
         #NOTE: not sure if deep copy is needed? check to see if we're changing these vals
  
     # verify that our little trick works in 4 parts of the earth'
-    deg2rad = np.pi/180
+    deg2rad = np.pi/180.0
     for i in range(1,5):
         if i == 1:
             test_lat = 56
@@ -159,7 +161,7 @@ def update_spatial_bin_index_on_prepared_profiles(run_code, MITprofs):
         test_x, test_y, test_z = sph2cart(test_lon*deg2rad, test_lat*deg2rad, 1)
         testarr = np.asarray([test_x, test_y, test_z])
         test_ind = int(F(testarr)[0])
-
+      
         print("=================")
         print("i = {} | test_ind = {} | lat = {} | lon = {}".format(i, test_ind, test_lat, test_lon))
         print("{} {} {} | {} {} {}".format(X[test_ind], Y[test_ind], Z[test_ind], test_x, test_y, test_z))
@@ -214,30 +216,43 @@ def update_spatial_bin_index_on_prepared_profiles(run_code, MITprofs):
     end
     """
 
-def main(dest_dir, input_dir):
+def main(run_code, MITprofs, grid_dir):
+
+    grid_dir = '/home/sweet/Desktop/ECCO-Insitu-Ian/Matlab-Dependents'
+    #llc270_grid_dir = 'C:\\Users\\szswe\\Downloads\\grid_llc270_common-20240125T224704Z-001\\grid_llc270_common'
     
-    update_spatial_bin_index_on_prepared_profiles("blah", "blah")
+    update_spatial_bin_index_on_prepared_profiles(run_code, MITprofs, grid_dir)
 
 if __name__ == '__main__':
 
-    """
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-d", "--dest_dir", action= "store",
-                        help = "The destination where output files will be stored" , dest= "dest_dir",
-                        type = str, required= True)
+    parser.add_argument("-r", "--run_code", action= "store",
+                        help = "Run code: 90 or 270" , dest= "run_code",
+                        type = int, required= True)
 
-    parser.add_argument("-i", "--input_dir", action= "store",
-                        help = "The input directory of CSV files to process" , dest= "input_dir",
+    parser.add_argument("-g", "--grid_dir", action= "store",
+                        help = "File path to 90/270 grids" , dest= "grid_dir",
                         type = str, required= True)
+    
+    parser.add_argument("-m", "--MIT_dir", action= "store",
+                    help = "File path to NETCDF files containing MITprofs info." , dest= "MIT_dir",
+                    type = str, required= True)
     
 
     args = parser.parse_args()
 
-    dest_dir = args.dest_dir
-    input_dir = args.input_dir
-    """
-    fnam = os.path.join('C:\\Users\\szswe\\Desktop\\', 'grid_llc90', 'bathy_eccollc_90x50_min2pts.bin')
+    run_code = args.run_code
+    grid_dir = args.grid_dir
+    MITprofs_fp = args.MIT_dir
 
-    update_spatial_bin_index_on_prepared_profiles("blah", "blah")
-    #main(dest_dir, input_dir)
+    if run_code != 90 or run_code != 270:
+        raise Exception("Runcode has to be 90 or 270!")
+    
+    nc_files = glob.glob(os.path.join(MITprofs_fp, '*.nc'))
+    if len(nc_files) == 0:
+        raise Exception("Invalid NC filepath")
+    for file in nc_files:
+        MITprofs = MITprof_read(nc_files)
+
+    main(run_code, MITprofs, grid_dir)

@@ -2,74 +2,17 @@ import argparse
 import glob
 import os
 import numpy as np
-import step01 as update_prof_and_tile_points_on_profiles
-import step02 as update_spatial_bin_index_on_prepared_profiles
+import step01 as one
+import step02 as two
 import netCDF4 as nc
 
-def MITprof_read(file):
-
-    MITprofs = {}
-
-    dataset = nc.Dataset(file)
-    # unpack NETCDF vals into numpy arrs
-    df_HHMMSS = dataset.variables['prof_HHMMSS'][:]
-    df_YYMMDD = dataset.variables['prof_YYYYMMDD'][:]
-    df_lat = dataset.variables['prof_lat'][:]
-    df_lon = dataset.variables['prof_lon'][:]
-    df_S = dataset.variables['prof_S'][:]
-    df_T = dataset.variables['prof_T'][:]
-    #df_depth_f_flag = dataset.variables['prof_depth_wod_flag'][:]
-    #df_depth_o_flag = dataset.variables['prof_depth_orig_flag'][:]
-    df_T_f_flag = dataset.variables['prof_Tflag'][:]   #  prof_T_wod_flag
-    #df_T_o_flag = dataset.variables['prof_T_orig_flag'][:]
-    df_S_f_flag = dataset.variables['prof_Sflag'][:]   # prof_S_wod_flag
-    #df_S_o_flag = dataset.variables['prof_S_orig_flag'][:]
-    #df_desc = dataset.variables['prof_descr'][:] 
-    df_depth = dataset.variables['prof_depth'][:]
-    # adds them to dictionary
-    MITprofs.update({"prof_HHMMSS": df_HHMMSS})
-    MITprofs.update({"prof_YYMMDD": df_YYMMDD})
-    MITprofs.update({"prof_lat": df_lat})
-    MITprofs.update({"prof_lon": df_lon})
-    MITprofs.update({"prof_S": df_S})
-    MITprofs.update({"prof_T": df_T})
-    #MITprofs.update({"prof_depth_wod_flag": df_depth_f_flag})
-    #MITprofs.update({"prof_depth_orig_flag": df_depth_o_flag})
-    MITprofs.update({"prof_Tflag": df_T_f_flag})       #  prof_Tflag
-    #MITprofs.update({"prof_T_orig_flag": df_T_o_flag})
-    MITprofs.update({"prof_Sflag": df_S_f_flag})       #  prof_Sflag
-    #MITprofs.update({"prof_S_orig_flag": df_S_o_flag})
-    # MITprofs.update({"prof_desc": df_desc})
-    MITprofs.update({"prof_depth": df_depth})
-
-    MITprofs['prof_interp_XC11'] = None
-    MITprofs['prof_interp_YC11'] = None
-    MITprofs['prof_interp_XCNINJ'] = None 
-    MITprofs['prof_interp_YCNINJ'] = None
-    MITprofs['prof_interp_i'] = None
-    MITprofs['prof_interp_j'] = None 
-    MITprofs['prof_interp_weights'] = None
-    MITprofs['prof_interp_lon'] = None
-    MITprofs['prof_interp_lat'] = None
-    MITprofs['prof_point'] = None
-    MITprofs['prof_flag'] = None
-    
-    # empty vars adding now:
-    MITprofs['prof_basin'] = None
-    MITprofs['prof_Tweight'] = None
-    MITprofs['prof_Testim'] = None
-    MITprofs['prof_Terr'] = None
-    MITprofs['prof_Sweight'] = None
-    MITprofs['prof_Sestim'] = None
-    MITprofs['prof_Serr'] = None
-
-    return MITprofs
+from tools import MITprof_read
 
 def MITprof_write_to_nc(MITprof):
 
     dest_dir = "/home/sweet/Desktop/ECCO-Insitu-Ian/Python-Dest"
 
-    nc_path = os.path.join(dest_dir, "step_one_2.nc")
+    nc_path = os.path.join(dest_dir, "step_two.nc")
     
     nc_file = nc.Dataset(nc_path, 'w')
 
@@ -165,15 +108,14 @@ def NODC_pipeline(dest_dir, file_type, input_dir):
         for file in netCDF_files:
             MITprofs = MITprof_read(file)
             if MITprofs != 0 :
-                update_prof_and_tile_points_on_profiles.update_prof_and_tile_points_on_profiles(file_type, MITprofs)
-                update_spatial_bin_index_on_prepared_profiles.update_spatial_bin_index_on_prepared_profiles(file_type, MITprofs)
+                one.main(file_type, MITprofs, "grid_dir")
+                two.main(file_type, MITprofs, "blah")
             else:
                 raise Exception("No info in NetCDF files")
     else:
         raise Exception("No NetCDF files found")
 
-    #print(MITprofs)
-    #MITprof_write_to_nc(MITprofs)
+    MITprof_write_to_nc(MITprofs)
 
     return
     """
