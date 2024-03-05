@@ -111,8 +111,8 @@ def update_spatial_bin_index_on_prepared_profiles(run_code, MITprofs, grid_dir):
     ## Prepare the nearest neighbor mapping
 
     if bin_llcN  == 90:
-  
-        lon_90, lat_90, blank_90, wet_ins_90_k, RAC_90_pf, bathy_90, good_ins_90, X_90, Y_90, Z_90 = load_llc90_grid(grid_dir)
+
+        lon_90, lat_90, blank_90, wet_ins_90_k, RAC_90_pf, bathy_90, good_ins_90, X_90, Y_90, Z_90, z_top_90, z_bot_90, hFacC_90, AI_90, z_cen_90 = load_llc90_grid(grid_dir)
         """
         Cant load matlab file
         cd(llc90_grid_dir)
@@ -167,11 +167,6 @@ def update_spatial_bin_index_on_prepared_profiles(run_code, MITprofs, grid_dir):
         print("{} {} {} | {} {} {}".format(X[test_ind], Y[test_ind], Z[test_ind], test_x, test_y, test_z))
         print("{} {} | {} {}".format(lat_llc[test_ind], lon_llc[test_ind], test_lat, test_lon))
         print("=================")
-        """
-        NOTE: review this w/ ian
-        for the last 2 we calculate different vals for test_ind (interpolation)
-        The longs/ lat match MATLAB down vals by 0.5, PYTHON up by 0.5
-        """
 
     ##---------------------------------------------
     ## Read and process the profile files
@@ -253,6 +248,6 @@ if __name__ == '__main__':
     if len(nc_files) == 0:
         raise Exception("Invalid NC filepath")
     for file in nc_files:
-        MITprofs = MITprof_read(nc_files)
+        MITprofs = MITprof_read(file, 2)
 
     main(run_code, MITprofs, grid_dir)

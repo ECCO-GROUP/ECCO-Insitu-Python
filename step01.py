@@ -5,7 +5,6 @@ import numpy as np
 import copy
 from geopy import distance
 from scipy.interpolate import griddata
-
 from tools import MITprof_read, load_llc270_grid, load_llc90_grid, patchface3D, sph2cart
 
 def get_profpoint_llc_ian(lon_llc, lat_llc, mask_llc, MITprof):
@@ -384,7 +383,8 @@ def update_prof_and_tile_points_on_profiles(run_code, MITprof, grid_dir):
     ##  Read in llc grid 
 
     if llcN == 90:
-        lon_90, lat_90, blank_90, wet_ins_90_k, RAC_90_pf, bathy_90, good_ins_90, X_90, Y_90, Z_90 = load_llc90_grid(grid_dir)
+
+        lon_90, lat_90, blank_90, wet_ins_90_k, RAC_90_pf, bathy_90, good_ins_90, X_90, Y_90, Z_90, z_top_90, z_bot_90, hFacC_90, AI_90, z_cen_90 = load_llc90_grid(grid_dir)
         # tiles are 30x30
         ni = 30
         nj = 30
@@ -481,9 +481,9 @@ def update_prof_and_tile_points_on_profiles(run_code, MITprof, grid_dir):
     # -- you may have to create the field prof_flag.
     
     #if isfield(MITprof,'prof_flag')
-    if 'prof_flag' in MITprof:
+    if 'prof_flag' not in MITprof:
         #MITprof.prof_flag = zeros(length(MITprof.prof_YYYYMMDD),1);
-        MITprof['prof_flag'] = np.zeros(len(MITprof['prof_YYMMDD']))
+        MITprof['prof_flag'] = np.zeros(len(MITprof['prof_YYYYMMDD']))
 
     # MITprof['prof_flag'][bad_lats] = 100
     MITprof['prof_flag'][ins_too_far] = 101
@@ -552,6 +552,6 @@ if __name__ == '__main__':
     if len(nc_files) == 0:
         raise Exception("Invalid NC filepath")
     for file in nc_files:
-        MITprofs = MITprof_read(nc_files)
+        MITprofs = MITprof_read(nc_files, 1)
 
     main(run_code, MITprofs, grid_dir)

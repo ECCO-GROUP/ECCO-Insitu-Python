@@ -235,11 +235,6 @@ def update_sigmaTS_on_prepared_profiles(run_code, MITprofs, grid_dir):
     sigma_T_MITprof_z = []
     sigma_S_MITprof_z = []
 
-    # initialize new container for MITprofs (1 per year generally)
-    MITprofs_new = {}
-
-    #for ilist = 1:length(MITprofs) - passing in MITprof
-
     num_profs = len(MITprofs['prof_lat'])
     num_prof_depths = len(MITprofs['prof_depth'])
 
@@ -354,7 +349,7 @@ def update_sigmaTS_on_prepared_profiles(run_code, MITprofs, grid_dir):
     """ 
             
     
-def main(run_cTode, MITprofs, grid_dir):
+def main(run_code, MITprofs, grid_dir):
 
     grid_dir = '/home/sweet/Desktop/ECCO-Insitu-Ian/Matlab-Dependents'
     #llc270_grid_dir = 'C:\\Users\\szswe\\Downloads\\grid_llc270_common-20240125T224704Z-001\\grid_llc270_common'

@@ -3,63 +3,132 @@ import os
 import numpy as np
 import netCDF4 as nc
 
-def MITprof_read(file):
+"""
+READS THE MATLAB GENERATED FILES
+"""
+def MITprof_read(file, step):
 
     MITprofs = {}
-
     dataset = nc.Dataset(file)
-    # unpack NETCDF vals into numpy arrs
+        
     df_HHMMSS = dataset.variables['prof_HHMMSS'][:]
+    MITprofs.update({"prof_HHMMSS": df_HHMMSS})
+
     df_YYMMDD = dataset.variables['prof_YYYYMMDD'][:]
+    MITprofs.update({"prof_YYYYMMDD": df_YYMMDD})
+    
     df_lat = dataset.variables['prof_lat'][:]
+    MITprofs.update({"prof_lat": df_lat})
     df_lon = dataset.variables['prof_lon'][:]
-    df_S = dataset.variables['prof_S'][:]
-    df_T = dataset.variables['prof_T'][:]
+    MITprofs.update({"prof_lon": df_lon})
+
+    df_basin = dataset.variables['prof_basin'][:]
+    MITprofs.update({"prof_basin": df_basin})
+
+    df_date = dataset.variables['prof_date'][:]
+    MITprofs.update({"prof_date": df_date})
+
+    df_depth = dataset.variables['prof_depth'][:]
+    MITprofs.update({"prof_depth": df_depth})
     #df_depth_f_flag = dataset.variables['prof_depth_wod_flag'][:]
     #df_depth_o_flag = dataset.variables['prof_depth_orig_flag'][:]
-    df_T_f_flag = dataset.variables['prof_Tflag'][:]   #  prof_T_wod_flag
-    #df_T_o_flag = dataset.variables['prof_T_orig_flag'][:]
-    df_S_f_flag = dataset.variables['prof_Sflag'][:]   # prof_S_wod_flag
-    #df_S_o_flag = dataset.variables['prof_S_orig_flag'][:]
-    #df_desc = dataset.variables['prof_descr'][:] 
-    df_depth = dataset.variables['prof_depth'][:]
-    # adds them to dictionary
-    MITprofs.update({"prof_HHMMSS": df_HHMMSS})
-    MITprofs.update({"prof_YYMMDD": df_YYMMDD})
-    MITprofs.update({"prof_lat": df_lat})
-    MITprofs.update({"prof_lon": df_lon})
-    MITprofs.update({"prof_S": df_S})
-    MITprofs.update({"prof_T": df_T})
     #MITprofs.update({"prof_depth_wod_flag": df_depth_f_flag})
     #MITprofs.update({"prof_depth_orig_flag": df_depth_o_flag})
-    MITprofs.update({"prof_Tflag": df_T_f_flag})       #  prof_Tflag
-    #MITprofs.update({"prof_T_orig_flag": df_T_o_flag})
-    MITprofs.update({"prof_Sflag": df_S_f_flag})       #  prof_Sflag
-    #MITprofs.update({"prof_S_orig_flag": df_S_o_flag})
-    # MITprofs.update({"prof_desc": df_desc})
-    MITprofs.update({"prof_depth": df_depth})
 
-    MITprofs['prof_interp_XC11'] = None
-    MITprofs['prof_interp_YC11'] = None
-    MITprofs['prof_interp_XCNINJ'] = None 
-    MITprofs['prof_interp_YCNINJ'] = None
-    MITprofs['prof_interp_i'] = None
-    MITprofs['prof_interp_j'] = None 
-    MITprofs['prof_interp_weights'] = None
-    MITprofs['prof_interp_lon'] = None
-    MITprofs['prof_interp_lat'] = None
-    MITprofs['prof_point'] = None
-    MITprofs['prof_flag'] = None
-    
-    # empty vars adding now:
-    MITprofs['prof_basin'] = None
-    MITprofs['prof_Tweight'] = None
-    MITprofs['prof_Testim'] = None
-    MITprofs['prof_Terr'] = None
-    MITprofs['prof_Sweight'] = None
+    df_desc = dataset.variables['prof_descr'][:] 
+    MITprofs.update({"prof_desc": df_desc})
+
+    df_point = dataset.variables['prof_point'][:]
+    MITprofs.update({"prof_point": df_point})
+
+    #=========== PROF_S VARS ===========
+    df_S = dataset.variables['prof_S'][:]
+    MITprofs.update({"prof_S": df_S})
+
     MITprofs['prof_Sestim'] = None
-    MITprofs['prof_Serr'] = None
 
+    df_S_f_flag = dataset.variables['prof_Sflag'][:]   # prof_S_wod_flag
+    MITprofs.update({"prof_Sflag": df_S_f_flag}) 
+
+    #df_S_o_flag = dataset.variables['prof_S_orig_flag'][:]
+    #MITprofs.update({"prof_S_orig_flag": df_S_o_flag})
+
+    #=========== PROF_S VARS END ===========
+
+    df_Sweight = dataset.variables['prof_Sweight'][:]
+    MITprofs.update({"prof_Sweight": df_Sweight})
+    df_Tweight = dataset.variables['prof_Tweight'][:]
+    MITprofs.update({"prof_Tweight": df_Tweight})
+    
+    #=========== PROF_T VARS ===========
+    df_T = dataset.variables['prof_T'][:]
+    MITprofs.update({"prof_T": df_T})
+
+    MITprofs['prof_Testim'] = None
+
+    df_T_f_flag = dataset.variables['prof_Tflag'][:]   #  prof_T_wod_flag
+    MITprofs.update({"prof_Tflag": df_T_f_flag})       #  prof_Tflag
+
+    #df_T_o_flag = dataset.variables['prof_T_orig_flag'][:]
+    #MITprofs.update({"prof_T_orig_flag": df_T_o_flag}) 
+    #=========== PROF_T VARS END ===========
+
+    # NOTE: added in step 1
+    if step > 1:
+        df_interp_i = dataset.variables['prof_interp_i'][:]
+        MITprofs.update({"prof_interp_i": df_interp_i})
+        df_interp_j = dataset.variables['prof_interp_j'][:]
+        MITprofs.update({"prof_interp_j": df_interp_j})
+        
+        df_interp_lon = dataset.variables['prof_interp_lon'][:]
+        MITprofs.update({"prof_interp_lon": df_interp_lon})
+        df_interp_lat = dataset.variables['prof_interp_lat'][:]
+        MITprofs.update({"prof_interp_lat": df_interp_lat})
+    
+        df_interp_weight = dataset.variables['prof_interp_weights'][:]
+        MITprofs.update({"prof_interp_weights": df_interp_weight})
+        
+        df_interp_XC11 = dataset.variables['prof_interp_XC11'][:]
+        MITprofs.update({"prof_interp_XC11": df_interp_XC11})
+
+        df_interp_XCNINJ = dataset.variables['prof_interp_XCNINJ'][:]
+        MITprofs.update({"prof_interp_XCNINJ": df_interp_XCNINJ})
+
+        df_interp_YC11 = dataset.variables['prof_interp_YC11'][:]
+        MITprofs.update({"prof_interp_YC11": df_interp_YC11})
+        
+        df_interp_YCNINJ = dataset.variables['prof_interp_YCNINJ'][:]
+        MITprofs.update({"prof_interp_YCNINJ": df_interp_YCNINJ})
+    
+    # NOTE: added in step 2
+    if step > 2:
+        df_bin_a = dataset.variables['prof_bin_id_a'][:]
+        MITprofs.update({"prof_bin_id_a": df_bin_a})
+        df_bin_b = dataset.variables['prof_bin_id_b'][:]
+        MITprofs.update({"prof_bin_id_b": df_bin_b})
+
+    # NOTE: added in step 3
+    if step > 3:
+        df_prof_Tclim = dataset.variables['prof_Tclim'][:]
+        MITprofs.update({"prof_Tclim'": df_prof_Tclim})
+        df_prof_Sclim = dataset.variables['prof_Sclim'][:]
+        MITprofs.update({"prof_Sclim'": df_prof_Sclim})
+    
+    # NOTE: arrs are empty before they are added in step 4?
+    # However, step 4 tries first to pull existing info from these arrs BEFORE populating them
+    # I would check at the end of pipeline completion and ask if there is ever a senario where these following fields
+    # are populated from the original CSV files
+    df_Serr = dataset.variables['prof_Serr'][:]    # NOTE: empty but there is code that is translated
+    MITprofs.update({"prof_Serr": df_Serr})        # but untested to populate these fields
+    df_Terr = dataset.variables['prof_Terr'][:]
+    MITprofs.update({"prof_Terr": df_Terr})
+
+    df_Sweight = dataset.variables['prof_Sweight'][:]
+    MITprofs.update({"prof_Sweight": df_Sweight})
+    df_Tweight = dataset.variables['prof_Tweight'][:]
+    MITprofs.update({"prof_Tweight": df_Tweight})
+    # Note above pertains to fields above this line
+        
     return MITprofs
 
 def patchface3D(nx, ny, nz, array_in, direction):
@@ -836,4 +905,4 @@ def load_llc90_grid(grootdir):
     # landmask_90_pf = patchface3D(llcN, llcN*13, 1, temp, 2)
     landmask_90_pf, faces = patchface3D(llcN, llcN*13, 1, temp, 2.5)
 
-    return lon_90, lat_90, blank_90, wet_ins_90_k, RAC_90_pf, bathy_90, good_ins_90, X_90, Y_90, Z_90
+    return lon_90, lat_90, blank_90, wet_ins_90_k, RAC_90_pf, bathy_90, good_ins_90, X_90, Y_90, Z_90, z_top_90, z_bot_90, hFacC_90, AI_90, z_cen_90 

@@ -4,15 +4,17 @@ import os
 import numpy as np
 import step01 as one
 import step02 as two
+import step03 as three
+import step04 as four
 import netCDF4 as nc
 
 from tools import MITprof_read
 
-def MITprof_write_to_nc(MITprof):
+def MITprof_write_to_nc(MITprof, step):
 
     dest_dir = "/home/sweet/Desktop/ECCO-Insitu-Ian/Python-Dest"
 
-    nc_path = os.path.join(dest_dir, "step_two.nc")
+    nc_path = os.path.join(dest_dir, "step_{}.nc".format(step))
     
     nc_file = nc.Dataset(nc_path, 'w')
 
@@ -26,7 +28,7 @@ def MITprof_write_to_nc(MITprof):
     prof_HHMMSS_var[:] = MITprof['prof_HHMMSS']
 
     prof_YYMMDD_var = nc_file.createVariable('prof_YYYYMMDD', np.int64, 'one_dim')
-    prof_YYMMDD_var[:] = MITprof['prof_YYMMDD']
+    prof_YYMMDD_var[:] = MITprof['prof_YYYYMMDD']
     
     prof_lat_var = nc_file.createVariable('prof_lat', np.float64, 'one_dim')
     prof_lat_var[:] = MITprof['prof_lat']
@@ -34,64 +36,99 @@ def MITprof_write_to_nc(MITprof):
     prof_lon_var = nc_file.createVariable('prof_lon', np.float64, 'one_dim')
     prof_lon_var[:] = MITprof['prof_lon']
 
-    prof_interp_XC11 = nc_file.createVariable('prof_interp_XC11', np.float64, 'one_dim')
-    prof_interp_XC11[:] = MITprof['prof_interp_XC11']
+    prof_basin_var = nc_file.createVariable('prof_basin', np.float64, 'one_dim')
+    prof_basin_var[:] = MITprof['prof_basin']
 
-    prof_interp_YC11 = nc_file.createVariable('prof_interp_YC11', np.float64, 'one_dim')
-    prof_interp_YC11[:] = MITprof['prof_interp_YC11']
-
-    prof_interp_XCNINJ = nc_file.createVariable('prof_interp_XCNINJ', np.float64, 'one_dim')
-    prof_interp_XCNINJ[:] = MITprof['prof_interp_XCNINJ']
-
-    prof_interp_YCNINJ = nc_file.createVariable('prof_interp_YCNINJ', np.float64, 'one_dim')
-    prof_interp_YCNINJ[:] = MITprof['prof_interp_YCNINJ']
-
-    prof_interp_i = nc_file.createVariable('prof_interp_i', np.float64, 'one_dim')
-    prof_interp_i[:] = MITprof['prof_interp_i']
-
-    prof_interp_j = nc_file.createVariable('prof_interp_j', np.float64, 'one_dim')
-    prof_interp_j[:] = MITprof['prof_interp_j']
-
-    prof_interp_weights = nc_file.createVariable('prof_interp_weights', np.float64, 'one_dim')
-    prof_interp_weights[:] = MITprof['prof_interp_weights']
-
-    prof_interp_lon = nc_file.createVariable('prof_interp_lon', np.float64, 'one_dim')
-    prof_interp_lon[:] = MITprof['prof_interp_lon']
-
-    prof_interp_lat = nc_file.createVariable('prof_interp_lat', np.float64, 'one_dim')
-    prof_interp_lat[:] = MITprof['prof_interp_lat']
-
-    prof_point = nc_file.createVariable('prof_point', np.float64, 'one_dim')
-    prof_point[:] = MITprof['prof_point']
-
-    prof_bin_id_a = nc_file.createVariable('prof_bin_id_a', np.float64, 'one_dim')
-    prof_bin_id_a[:] = MITprof['prof_bin_id_a']
-
-    prof_bin_id_b = nc_file.createVariable('prof_bin_id_b', np.float64, 'one_dim')
-    prof_bin_id_b[:] = MITprof['prof_bin_id_b']
-
-    # Create var - multi dim
-
-    prof_S_var = nc_file.createVariable('prof_S', np.float64, ('dim_x', 'dim_y'))
-    prof_S_var.units = 'N/A'
-    prof_S_var[:] = MITprof['prof_S']
-
-    prof_T_var = nc_file.createVariable('prof_T', np.float64, ('dim_x', 'dim_y'))
-    prof_T_var.units = 'Degree C'
-    prof_T_var[:] = MITprof['prof_T']
+    prof_date_var = nc_file.createVariable('prof_date', np.float64, 'one_dim')
+    prof_date_var[:] = MITprof['prof_date']
 
     prof_depth_var = nc_file.createVariable('prof_depth', np.float64, ('dim_x', 'dim_y'))
     prof_depth_var.units = 'm'
     prof_depth_var[:] = MITprof['prof_depth']
 
-    prof_depth_f_flag_var = nc_file.createVariable('prof_Tflag', np.float64, ('dim_x', 'dim_y'))
-    prof_depth_f_flag_var.units = 'N/A'
-    prof_depth_f_flag_var[:] = MITprof['prof_Tflag']
+    # NOTE: prof_descr ???
+
+    prof_point = nc_file.createVariable('prof_point', np.float64, 'one_dim')
+    prof_point[:] = MITprof['prof_point']
+
+    #=========== PROF_S VARS ===========
+    prof_S_var = nc_file.createVariable('prof_S', np.float64, ('dim_x', 'dim_y'))
+    prof_S_var.units = 'N/A'
+    prof_S_var[:] = MITprof['prof_S']
+
+    # NOTE: Sestim
 
     prof_depth_o_flag_var = nc_file.createVariable('prof_Sflag', np.float64, ('dim_x', 'dim_y'))
     prof_depth_o_flag_var.units = 'N/A'
     prof_depth_o_flag_var[:] = MITprof['prof_Sflag']
+    #=========== PROF_S VARS END ===========
 
+    #=========== PROF_T VARS ===========    
+    prof_T_var = nc_file.createVariable('prof_T', np.float64, ('dim_x', 'dim_y'))
+    prof_T_var.units = 'Degree C'
+    prof_T_var[:] = MITprof['prof_T']
+
+    # NOTE: Testim 
+
+    prof_depth_f_flag_var = nc_file.createVariable('prof_Tflag', np.float64, ('dim_x', 'dim_y'))
+    prof_depth_f_flag_var.units = 'N/A'
+    prof_depth_f_flag_var[:] = MITprof['prof_Tflag']
+    #=========== PROF_S VARS END ===========
+
+    if step >= 1:
+
+        prof_interp_XC11 = nc_file.createVariable('prof_interp_XC11', np.float64, 'one_dim')
+        prof_interp_XC11[:] = MITprof['prof_interp_XC11']
+
+        prof_interp_YC11 = nc_file.createVariable('prof_interp_YC11', np.float64, 'one_dim')
+        prof_interp_YC11[:] = MITprof['prof_interp_YC11']
+
+        prof_interp_XCNINJ = nc_file.createVariable('prof_interp_XCNINJ', np.float64, 'one_dim')
+        prof_interp_XCNINJ[:] = MITprof['prof_interp_XCNINJ']
+
+        prof_interp_YCNINJ = nc_file.createVariable('prof_interp_YCNINJ', np.float64, 'one_dim')
+        prof_interp_YCNINJ[:] = MITprof['prof_interp_YCNINJ']
+
+        prof_interp_i = nc_file.createVariable('prof_interp_i', np.float64, 'one_dim')
+        prof_interp_i[:] = MITprof['prof_interp_i']
+
+        prof_interp_j = nc_file.createVariable('prof_interp_j', np.float64, 'one_dim')
+        prof_interp_j[:] = MITprof['prof_interp_j']
+
+        prof_interp_weights = nc_file.createVariable('prof_interp_weights', np.float64, 'one_dim')
+        prof_interp_weights[:] = MITprof['prof_interp_weights']
+
+        prof_interp_lon = nc_file.createVariable('prof_interp_lon', np.float64, 'one_dim')
+        prof_interp_lon[:] = MITprof['prof_interp_lon']
+
+        prof_interp_lat = nc_file.createVariable('prof_interp_lat', np.float64, 'one_dim')
+        prof_interp_lat[:] = MITprof['prof_interp_lat']
+
+    if step >= 2:
+        prof_bin_id_a = nc_file.createVariable('prof_bin_id_a', np.float64, 'one_dim')
+        prof_bin_id_a[:] = MITprof['prof_bin_id_a']
+
+        prof_bin_id_b = nc_file.createVariable('prof_bin_id_b', np.float64, 'one_dim')
+        prof_bin_id_b[:] = MITprof['prof_bin_id_b']
+    
+    if step >= 3:
+        prof_Tclim = nc_file.createVariable('prof_Tclim', np.float64, ('dim_x', 'dim_y'))
+        prof_Tclim[:] = MITprof['prof_Tclim']
+
+        prof_Sclim = nc_file.createVariable('prof_Sclim', np.float64, ('dim_x', 'dim_y'))
+        prof_Sclim[:] = MITprof['prof_Sclim']
+    
+    if step >= 4:
+        prof_Terr = nc_file.createVariable('prof_Terr', np.float64, ('dim_x', 'dim_y'))
+        prof_Terr[:] = MITprof['prof_Terr']
+        prof_Serr = nc_file.createVariable('prof_Serr', np.float64, ('dim_x', 'dim_y'))
+        prof_Serr[:] = MITprof['prof_Serr']     
+
+        prof_Tweight = nc_file.createVariable('prof_Tweight', np.float64, ('dim_x', 'dim_y'))
+        prof_Tweight[:] = MITprof['prof_Tweight']
+        prof_Sweight = nc_file.createVariable('prof_Sweight', np.float64, ('dim_x', 'dim_y'))
+        prof_Sweight[:] = MITprof['prof_Sweight']
+   
     nc_file.close()
 
 # what does NODC stand for?
@@ -106,16 +143,18 @@ def NODC_pipeline(dest_dir, file_type, input_dir):
     # moved from step 01
     if len(netCDF_files) != 0:
         for file in netCDF_files:
-            MITprofs = MITprof_read(file)
+            MITprofs = MITprof_read(file, 0)
             if MITprofs != 0 :
                 one.main(file_type, MITprofs, "grid_dir")
                 two.main(file_type, MITprofs, "blah")
+                three.main('20181202_NODC', MITprofs, "blah")
+                four.main('20190126_do_not_respect_existing_weights', MITprofs, "blah")
             else:
                 raise Exception("No info in NetCDF files")
     else:
         raise Exception("No NetCDF files found")
 
-    MITprof_write_to_nc(MITprofs)
+    MITprof_write_to_nc(MITprofs, 4)
 
     return
     """
