@@ -37,7 +37,6 @@ def MITprof_read(file, step):
 
     df_desc = dataset.variables['prof_descr'][:] 
     MITprofs.update({"prof_desc": df_desc})
-
     df_point = dataset.variables['prof_point'][:]
     MITprofs.update({"prof_point": df_point})
 
@@ -54,11 +53,6 @@ def MITprof_read(file, step):
     #MITprofs.update({"prof_S_orig_flag": df_S_o_flag})
 
     #=========== PROF_S VARS END ===========
-
-    df_Sweight = dataset.variables['prof_Sweight'][:]
-    MITprofs.update({"prof_Sweight": df_Sweight})
-    df_Tweight = dataset.variables['prof_Tweight'][:]
-    MITprofs.update({"prof_Tweight": df_Tweight})
     
     #=========== PROF_T VARS ===========
     df_T = dataset.variables['prof_T'][:]
@@ -693,7 +687,7 @@ def load_llc270_grid(llc270_grid_dir):
     # 22
     delR_270, z_top_270, z_bot_270, z_cen_270 = make_llc270_cell_centers()
     
-    return lon_270, lat_270, blank_270, wet_ins_270_k, X_270, Y_270, Z_270, bathy_270, good_ins_270
+    return lon_270, lat_270, blank_270, wet_ins_270_k, X_270, Y_270, Z_270, bathy_270, good_ins_270, RAC_270_pf
 
 def sph2cart(az, elev, r):
 

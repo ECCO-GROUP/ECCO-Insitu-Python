@@ -53,9 +53,9 @@ def get_profpoint_llc_ian(lon_llc, lat_llc, mask_llc, MITprof):
     # these are the x,y,z coordinates of the 'good' cells in
     # model_xyz= [X_grid_pf Y_grid_pf Z_grid_pf]
     model_xyz = np.column_stack((X_grid_pf, Y_grid_pf, Z_grid_pf))
-    point_lon = MITprof["prof_lon"]
-    point_lat = MITprof["prof_lat"]
-
+    point_lon = MITprof["prof_lon"].astype(np.float64)
+    point_lat = MITprof["prof_lat"].astype(np.float64)
+    
     prof_x, prof_y, prof_z = sph2cart(point_lon*deg2rad, point_lat*deg2rad, 1)
 
     # F_grid_PF_XYZ_to_INDEX = scatteredInterpolant(model_xyz, AI_grid_pf,'nearest')
@@ -64,7 +64,7 @@ def get_profpoint_llc_ian(lon_llc, lat_llc, mask_llc, MITprof):
     
     # creating new prof_point field in dict and populating
     MITprof.update({"prof_point": F_grid_PF_XYZ_to_INDEX})
-    
+
     return F_grid_PF_XYZ_to_INDEX
 
 def get_tile_point_llc_ian(lon_llc, lat_llc, ni, nj, MITprof):

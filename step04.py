@@ -51,7 +51,7 @@ def interp_2D_to_arbitrary_z_levels(orig_data_xz, orig_z_centers, new_z_centers,
                 extended_data_xz(i,:) = tmp;
             end
         end
-        orig_data_xz = extended_data_xz;
+        orig_data_xz = extended_data_xz;intersect(zero_weight_T_ins
     end
     """
 
@@ -389,7 +389,7 @@ if __name__ == '__main__':
     """
     
     nc_files = glob.glob(os.path.join(MITprofs_fp, '*.nc'))
-    if len(nc_files) == 0:
+    if len(nc_files) == 0:    # moved from step 01
         raise Exception("Invalid NC filepath")
     for file in nc_files:
         MITprofs = MITprof_read(file, 4)

@@ -6,7 +6,9 @@ import step01 as one
 import step02 as two
 import step03 as three
 import step04 as four
+import step05 as five
 import netCDF4 as nc
+
 
 from tools import MITprof_read
 
@@ -128,7 +130,11 @@ def MITprof_write_to_nc(MITprof, step):
         prof_Tweight[:] = MITprof['prof_Tweight']
         prof_Sweight = nc_file.createVariable('prof_Sweight', np.float64, ('dim_x', 'dim_y'))
         prof_Sweight[:] = MITprof['prof_Sweight']
-   
+    
+    if step >= 5:
+        prof_area_gamma = nc_file.createVariable('prof_area_gamma', np.float64, 'one_dim')
+        prof_area_gamma[:] = MITprof['prof_area_gamma']
+
     nc_file.close()
 
 # what does NODC stand for?
@@ -139,22 +145,27 @@ def NODC_pipeline(dest_dir, file_type, input_dir):
     # init dictionary for storing MITprofs data
     MITprofs = {}
 
-    # NOTE: var created: filepath_data_in for list of file
-    # moved from step 01
+    # NOTE: 
+    # could simplify below loop?
+    # grid_dir -> need to pass in 90/270 and set grid_dir according to that
+    # --> need to make sure blah blah = load_grid_llc270 func is the same for all these files lol
+
     if len(netCDF_files) != 0:
         for file in netCDF_files:
             MITprofs = MITprof_read(file, 0)
             if MITprofs != 0 :
                 one.main(file_type, MITprofs, "grid_dir")
                 two.main(file_type, MITprofs, "blah")
+                # replaced interpolation w/ mat file
                 three.main('20181202_NODC', MITprofs, "blah")
                 four.main('20190126_do_not_respect_existing_weights', MITprofs, "blah")
+                five.main('20181202_apply_gamma', MITprofs, "blah")
             else:
                 raise Exception("No info in NetCDF files")
     else:
         raise Exception("No NetCDF files found")
 
-    MITprof_write_to_nc(MITprofs, 4)
+    MITprof_write_to_nc(MITprofs, 5)
 
     return
     """
