@@ -7,6 +7,7 @@ import step02 as two
 import step03 as three
 import step04 as four
 import step05 as five
+import step06 as six
 import netCDF4 as nc
 
 
@@ -134,6 +135,8 @@ def MITprof_write_to_nc(MITprof, step):
     if step >= 5:
         prof_area_gamma = nc_file.createVariable('prof_area_gamma', np.float64, 'one_dim')
         prof_area_gamma[:] = MITprof['prof_area_gamma']
+    
+    # step 6 - changed prof_T value
 
     nc_file.close()
 
@@ -160,12 +163,13 @@ def NODC_pipeline(dest_dir, file_type, input_dir):
                 three.main('20181202_NODC', MITprofs, "blah")
                 four.main('20190126_do_not_respect_existing_weights', MITprofs, "blah")
                 five.main('20181202_apply_gamma', MITprofs, "blah")
+                six.main('20181202_use_clim_for_missing_S', MITprofs, "blah")
             else:
                 raise Exception("No info in NetCDF files")
     else:
         raise Exception("No NetCDF files found")
 
-    MITprof_write_to_nc(MITprofs, 5)
+    MITprof_write_to_nc(MITprofs, 6)
 
     return
     """
@@ -176,24 +180,6 @@ def NODC_pipeline(dest_dir, file_type, input_dir):
         [tmp_name_current ' <-- ' tmp_name_last]
         
         switch step
-            case 0
-                run_code = '20181202_llc90'
-                eval([tmp_name_current '= update_prof_and_tile_points_on_profiles(run_code, eval(tmp_name_last))']);
-            case 1
-                run_code = '10242 and 2562'
-                eval([tmp_name_current '= update_spatial_bin_index_on_prepared_profiles(run_code, eval(tmp_name_last))']);
-            case 2
-                run_code = '20181202_NODC'
-                eval([tmp_name_current '= update_monthly_mean_TS_clim_WOA13v2_on_prepared_profiles(run_code, eval(tmp_name_last))']);
-            case 3
-                run_code = '20190126_do_not_respect_existing_weights'
-                eval([tmp_name_current '= update_sigmaTS_on_prepared_profiles(run_code,  eval(tmp_name_last))']);
-            case 4
-                run_code = '20181202_apply_gamma'
-                eval([tmp_name_current ' = update_gamma_factor_on_prepared_profiles(run_code, eval(tmp_name_last))']);
-            case 5
-                run_code = '20181202_use_clim_for_missing_S'
-                eval([tmp_name_current '= update_prof_insitu_T_to_potential_T(run_code, eval(tmp_name_last))']);
             case 6
                 run_code = '20190126_high_lat'
                 eval([tmp_name_current '= update_zero_weight_points_on_prepared_profiles(run_code,  eval(tmp_name_last))']);

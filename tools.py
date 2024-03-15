@@ -106,7 +106,7 @@ def MITprof_read(file, step):
         df_prof_Tclim = dataset.variables['prof_Tclim'][:]
         MITprofs.update({"prof_Tclim'": df_prof_Tclim})
         df_prof_Sclim = dataset.variables['prof_Sclim'][:]
-        MITprofs.update({"prof_Sclim'": df_prof_Sclim})
+        MITprofs.update({"prof_Sclim": df_prof_Sclim})
     
     # NOTE: arrs are empty before they are added in step 4?
     # However, step 4 tries first to pull existing info from these arrs BEFORE populating them
@@ -122,7 +122,13 @@ def MITprof_read(file, step):
     df_Tweight = dataset.variables['prof_Tweight'][:]
     MITprofs.update({"prof_Tweight": df_Tweight})
     # Note above pertains to fields above this line
-        
+
+    if step > 5:
+        df_area_gamma = dataset.variables['prof_area_gamma'][:]
+        MITprofs.update({"prof_area_gamma": df_area_gamma})
+    
+    # step6: updated prof_T
+
     return MITprofs
 
 def patchface3D(nx, ny, nz, array_in, direction):
