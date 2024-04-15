@@ -218,7 +218,7 @@ def main(run_code, MITprofs, grid_dir):
 
     grid_dir = '/home/sweet/Desktop/ECCO-Insitu-Ian/Matlab-Dependents'
     #llc270_grid_dir = 'C:\\Users\\szswe\\Downloads\\grid_llc270_common-20240125T224704Z-001\\grid_llc270_common'
-    
+    print("step05: update_gamma_factor_on_prepared_profiles")
     update_gamma_factor_on_prepared_profiles(run_code, MITprofs, grid_dir)
 
 if __name__ == '__main__':

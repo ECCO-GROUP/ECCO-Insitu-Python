@@ -36,7 +36,7 @@ def MITprof_read(file, step):
     #MITprofs.update({"prof_depth_orig_flag": df_depth_o_flag})
 
     df_desc = dataset.variables['prof_descr'][:] 
-    MITprofs.update({"prof_desc": df_desc})
+    MITprofs.update({"prof_descr": df_desc})
     df_point = dataset.variables['prof_point'][:]
     MITprofs.update({"prof_point": df_point})
 
@@ -44,7 +44,8 @@ def MITprof_read(file, step):
     df_S = dataset.variables['prof_S'][:]
     MITprofs.update({"prof_S": df_S})
 
-    MITprofs['prof_Sestim'] = None
+    df_Sestim = dataset.variables['prof_Sestim'][:]
+    MITprofs.update({"prof_Sestim": df_Sestim})
 
     df_S_f_flag = dataset.variables['prof_Sflag'][:]   # prof_S_wod_flag
     MITprofs.update({"prof_Sflag": df_S_f_flag}) 
@@ -58,7 +59,8 @@ def MITprof_read(file, step):
     df_T = dataset.variables['prof_T'][:]
     MITprofs.update({"prof_T": df_T})
 
-    MITprofs['prof_Testim'] = None
+    df_Testim = dataset.variables['prof_Testim'][:]
+    MITprofs.update({"prof_Testim": df_Sestim})
 
     df_T_f_flag = dataset.variables['prof_Tflag'][:]   #  prof_T_wod_flag
     MITprofs.update({"prof_Tflag": df_T_f_flag})       #  prof_Tflag
@@ -102,9 +104,10 @@ def MITprof_read(file, step):
         MITprofs.update({"prof_bin_id_b": df_bin_b})
 
     # NOTE: added in step 3
+    
     if step > 3:
         df_prof_Tclim = dataset.variables['prof_Tclim'][:]
-        MITprofs.update({"prof_Tclim'": df_prof_Tclim})
+        MITprofs.update({"prof_Tclim": df_prof_Tclim})
         df_prof_Sclim = dataset.variables['prof_Sclim'][:]
         MITprofs.update({"prof_Sclim": df_prof_Sclim})
     
@@ -128,6 +131,11 @@ def MITprof_read(file, step):
         MITprofs.update({"prof_area_gamma": df_area_gamma})
     
     # step6: updated prof_T
+    if step > 7:
+        df_Tweight_code = dataset.variables['prof_Tweight_code'][:]
+        MITprofs.update({"prof_Tweight_code": df_Tweight_code})
+        df_Sweight_code = dataset.variables['prof_Sweight_code'][:]
+        MITprofs.update({"prof_Sweight_code": df_Sweight_code})
 
     return MITprofs
 

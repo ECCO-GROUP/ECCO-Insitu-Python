@@ -262,19 +262,18 @@ def update_sigmaTS_on_prepared_profiles(run_code, MITprofs, grid_dir):
         #ins = find(sigma_T_MITprof_z_flat >= 0);
         ins = np.where(sigma_T_MITprof_z_flat >=0)[0]
         sigma_T_MITprof_z_flat[ins] = np.maximum(new_T_floor, sigma_T_MITprof_z_flat[ins])
-
+    
     if 'prof_S' in MITprofs and not sigma_S_MITprof_z:
         
         sigma_S_MITprof_z = interp_3D_to_arbitrary_z_levels(sigma_S, z_cen_90, MITprofs['prof_depth'], 0)
         #['interpolated sigma S to new levels']
         sigma_S_MITprof_z_flat = np.reshape(sigma_S_MITprof_z, (90*1170, num_prof_depths), order = 'F')
         #['finished interpolating and reshaping ']
-
         if new_S_floor > 0:
             # Apply floor to sigma S where  sigma S >= 0
             ins = np.where(sigma_S_MITprof_z_flat >= 0)[0]
             sigma_S_MITprof_z_flat[ins] = np.maximum(new_S_floor, sigma_S_MITprof_z_flat[ins])
-
+   
     # map sigma field to profile points & make weights & apply weights
     tmp_sigma_T = sigma_T_MITprof_z_flat[prof_llc90_cell_index,:]
     #tmp_weight_T = 1./tmp_sigma_T.^2;
@@ -328,32 +327,12 @@ def update_sigmaTS_on_prepared_profiles(run_code, MITprofs, grid_dir):
 
     else:
         print("STEP 4: not respecting the zero weights of the original profiles")
-  
-    """
-    if save_output_to_disk
-        ['writing ' fDataOut{ilist}]
-        fileOut=[output_dir '/'  fDataOut{ilist}]
-        fprintf('%s\n',fileOut);
-        switch save_format
-            case 0
-                write_profile_structure_to_netcdf(MITprof, fileOut)
-                %MITprof_write(fileOut, MITprof);
-                %%
-            case 1
-                fileOut = [fileOut '.mat']
-                save(fileOut,'MITprof')
-        end
-        ['profile file written to disk '  fileOut]
-    else
-        MITprofs_new{ilist} = MITprof;
-    """ 
-            
     
 def main(run_code, MITprofs, grid_dir):
 
     grid_dir = '/home/sweet/Desktop/ECCO-Insitu-Ian/Matlab-Dependents'
     #llc270_grid_dir = 'C:\\Users\\szswe\\Downloads\\grid_llc270_common-20240125T224704Z-001\\grid_llc270_common'
-    
+    print("step 04: update_sigmaTS_on_prepared_profiles")
     update_sigmaTS_on_prepared_profiles(run_code, MITprofs, grid_dir)
 
 if __name__ == '__main__':

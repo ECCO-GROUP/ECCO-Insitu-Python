@@ -8,8 +8,10 @@ import step03 as three
 import step04 as four
 import step05 as five
 import step06 as six
+import step07 as seven
+import step08 as eight
+import step09 as nine
 import netCDF4 as nc
-
 
 from tools import MITprof_read
 
@@ -138,6 +140,17 @@ def MITprof_write_to_nc(MITprof, step):
     
     # step 6 - changed prof_T value
 
+    if step >= 7:
+        prof_Tweight_code = nc_file.createVariable('prof_Tweight_code', np.float64, ('dim_x', 'dim_y'))
+        prof_Tweight_code[:] = MITprof['prof_Tweight_code']
+        prof_Sweight_code = nc_file.createVariable('prof_Sweight_code', np.float64, ('dim_x', 'dim_y'))
+        prof_Sweight_code[:] = MITprof['prof_Sweight_code']
+    
+    # step 8: np and nd are added but not read into netCDF files
+    # serr + terr - missing from write since step 08
+
+
+
     nc_file.close()
 
 # what does NODC stand for?
@@ -161,15 +174,19 @@ def NODC_pipeline(dest_dir, file_type, input_dir):
                 two.main(file_type, MITprofs, "blah")
                 # replaced interpolation w/ mat file
                 three.main('20181202_NODC', MITprofs, "blah")
+                # translated but untested part in step 5
                 four.main('20190126_do_not_respect_existing_weights', MITprofs, "blah")
                 five.main('20181202_apply_gamma', MITprofs, "blah")
                 six.main('20181202_use_clim_for_missing_S', MITprofs, "blah")
+                seven.main('20190126_high_lat', MITprofs, "blah")
+                eight.main('20181202', MITprofs, "sdfsf")
+                nine.main('nlasdfsd', MITprofs, "asdfsdf")
             else:
                 raise Exception("No info in NetCDF files")
     else:
         raise Exception("No NetCDF files found")
 
-    MITprof_write_to_nc(MITprofs, 6)
+    MITprof_write_to_nc(MITprofs, 9)
 
     return
     """

@@ -347,7 +347,7 @@ def main(run_code, MITprofs, grid_dir):
 
     grid_dir = '/home/sweet/Desktop/ECCO-Insitu-Ian/Matlab-Dependents'
     #llc270_grid_dir = 'C:\\Users\\szswe\\Downloads\\grid_llc270_common-20240125T224704Z-001\\grid_llc270_common'
-    
+    print("step06: update_prof_insitu_T_to_potential_T")
     update_prof_insitu_T_to_potential_T(run_code, MITprofs, grid_dir)
 
 if __name__ == '__main__':

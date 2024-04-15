@@ -215,7 +215,7 @@ def main(run_code, MITprofs, grid_dir):
 
     grid_dir = '/home/sweet/Desktop/ECCO-Insitu-Ian/Matlab-Dependents'
     #llc270_grid_dir = 'C:\\Users\\szswe\\Downloads\\grid_llc270_common-20240125T224704Z-001\\grid_llc270_common'
-    
+    print("step02: update_spatial_bin_index_on_prepared_profiles")
     update_spatial_bin_index_on_prepared_profiles(run_code, MITprofs, grid_dir)
 
 if __name__ == '__main__':
