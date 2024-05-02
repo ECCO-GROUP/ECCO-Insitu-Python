@@ -1,7 +1,6 @@
 import glob
 import os
 import numpy as np
-import gsw
 from tools import MITprof_read
 
 def sw_pres(DEPTH, LAT):
@@ -174,10 +173,6 @@ def sw_ptmp(S, T, P, PR):
     return PT
 
 def update_prof_insitu_T_to_potential_T(run_code, MITprofs, grid_dir):
-
-    # defaults
-    save_output_to_disk = 0
-    make_figs = 0
 
     # SET INPUT PARAMETERS
     fillVal=-9999

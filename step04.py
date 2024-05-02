@@ -168,7 +168,7 @@ def update_sigmaTS_on_prepared_profiles(run_code, MITprofs, grid_dir):
     # Init profile package
     #  Read in grid for sigma and climatology
 
-    lon_90, lat_90, blank_90, wet_ins_90_k, RAC_90_pf, bathy_90, good_ins_90, X_90, Y_90, Z_90, z_top_90, z_bot_90, hFacC_90, AI_90, z_cen_90 = load_llc90_grid(grid_dir)
+    wet_ins_90_k, X_90, Y_90, Z_90, z_top_90, z_bot_90, hFacC_90, AI_90, z_cen_90 = load_llc90_grid(grid_dir, 4)
     z_map = make_llc90_z_map(z_top_90, z_bot_90)
 
     hf = np.copy(hFacC_90)

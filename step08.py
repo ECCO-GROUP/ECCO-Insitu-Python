@@ -1,12 +1,9 @@
-import copy
 import glob
 import os
 import numpy as np
 import numpy.ma as ma
-import datetime as dt
 from step07 import count_profs_with_nonzero_weights
 from tools import MITprof_read
-import scipy.io as sio
 
 def extract_profile_subset_from_MITprof(MITprofs, prof_ins, prof_depth_ins):
     """

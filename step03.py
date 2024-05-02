@@ -10,21 +10,14 @@ from tools import MITprof_read, sph2cart
 
 def update_monthly_mean_TS_clim_WOA13v2_on_prepared_profiles(run_code, MITprofs):
 
-    #set(0,'DefaultTextInterpreter','none');
+
     fillVal=-9999
-    checkVal=-9000
     # climatolgy dir and filenames
     TS_clim_dir = ''
-    f_source_ST={}
 
-    debug_code = 0
-
-    save_output_to_disk = 1
-    make_figs = 0
 
     if run_code == '20181202_NODC':
             
-        save_output_to_disk = 0
         TS_clim_dir = '/home/sweet/Desktop/ECCO-Insitu-Ian/Matlab-Dependents/TS Climatology'
         TS_clim_fname = 'WOA13_v2_TS_clim_merged_with_potential_T.nc'
         
@@ -45,7 +38,8 @@ def update_monthly_mean_TS_clim_WOA13v2_on_prepared_profiles(run_code, MITprofs)
         clim_depths =  TS_data.variables['depth'][:]
         num_clim_depths = len(clim_depths)
 
-    """
+    """  
+    # MATLAB CODE
     elif run_code == '20181203_ARGO':
         save_output_to_disk = 0
         make_figs = 0
@@ -63,7 +57,7 @@ def update_monthly_mean_TS_clim_WOA13v2_on_prepared_profiles(run_code, MITprofs)
         lat = WOA_2013_v2_clim_55z.lat;
         
         num_clim_depths = length(WOA_2013_v2_clim_55z.depth);
-            
+           
     elif run_code == '20181203_97z':
             
         save_output_to_disk = 0;

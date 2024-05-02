@@ -11,6 +11,7 @@ import step06 as six
 import step07 as seven
 import step08 as eight
 import step09 as nine
+import step10 as ten
 import netCDF4 as nc
 
 from tools import MITprof_read
@@ -149,11 +150,9 @@ def MITprof_write_to_nc(MITprof, step):
     # step 8: np and nd are added but not read into netCDF files
     # serr + terr - missing from write since step 08
 
-
-
     nc_file.close()
 
-# what does NODC stand for?
+# what does NODC stand for? NCEI
 def NODC_pipeline(dest_dir, file_type, input_dir):
 
     # Get a list of all netCDF files present in input directory 
@@ -181,78 +180,13 @@ def NODC_pipeline(dest_dir, file_type, input_dir):
                 seven.main('20190126_high_lat', MITprofs, "blah")
                 eight.main('20181202', MITprofs, "sdfsf")
                 nine.main('nlasdfsd', MITprofs, "asdfsdf")
+                ten.main('20181218_2', MITprofs, "blah")
             else:
                 raise Exception("No info in NetCDF files")
     else:
         raise Exception("No NetCDF files found")
 
-    MITprof_write_to_nc(MITprofs, 9)
-
-    return
-    """
-    ## Runs loop to process files
-    for step = steps_to_run:
-        ['STEP ' num2str(step)]
-        tmp_name_current =['MITprofs_new_' num2str(step)];
-        [tmp_name_current ' <-- ' tmp_name_last]
-        
-        switch step
-            case 6
-                run_code = '20190126_high_lat'
-                eval([tmp_name_current '= update_zero_weight_points_on_prepared_profiles(run_code,  eval(tmp_name_last))']);
-            case 7 
-                run_code = '20181202'
-                eval([tmp_name_current ' = update_remove_zero_T_S_weighted_profiles_from_MITprof(run_code, eval(tmp_name_last))']);
-                %verify_only_profiles_with_nonzero_weights(eval(tmp_name_current));            
-            case 8 
-                eval([tmp_name_current ' = update_remove_extraneous_depth_levels(eval(tmp_name_last), make_figs, fig_dir)']);
-                %% eval([tmp_name_current ' = update_remove_extraneous_depth_levels(eval(tmp_name_last), ' ...
-                %%    'field_name, make_figs, fig_dir)']);
-            case 9
-                run_code = '20181218_2';
-                %% eval([tmp_name_current '= update_decimate_profiles_subdaily_to_once_daily(run_code, ' ...
-                %%    'eval(tmp_name_last), field_name, make_figs, fig_dir)']);
-                eval([tmp_name_current '= update_decimate_profiles_subdaily_to_once_daily(run_code, ' ...
-                    'eval(tmp_name_last), make_figs, fig_dir)']);
-                %verify_only_profiles_with_nonzero_weights(eval(tmp_name_current));
- 
-        
-        ## save memory, remove the last MITprofs_new fields from memory
-        eval(['clear ' tmp_name_last])
-        tmp_name_last = tmp_name_current;
-        
-        ## saves steps_to_save files
-        if ismember(step, steps_to_save)
-            cd(output_dir)
-            save(['MITprofs_new_' field_name '_step_' num2str(step) '.mat'],[tmp_name_current]','-v7.3')
-        end
-        
-
-    ## Save final to NetCDF format if specified
-    # don't you always want to save to NetCDF?
-    if save_final_to_netcdf
-        for i = 1:length(eval(tmp_name_current))
-            tmp = eval(tmp_name_current);
-            MITprof = tmp{i};
-            
-            years = unique(floor(MITprof.prof_YYYYMMDD./1e4));
-            
-            if length(years) > 1
-                stop
-            else
-                y(i) = years;
-            end
-            
-            % convert prof desc to character array.
-            MITprof.prof_descr=char(MITprof.prof_descr);
-            
-            fname_base = [field_name '_' file_suffix '_' num2str(years)]
-            cd(output_dir)
-            % write netcdf
-            write_profile_structure_to_netcdf(MITprof, [fname_base '.nc'])
-        end
-    end
-    """
+    #MITprof_write_to_nc(MITprofs, 10)
 
 def main(dest_dir, file_type, input_dir):
     # need to change name later

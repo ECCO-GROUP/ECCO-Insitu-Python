@@ -471,14 +471,6 @@ def patchface3D(nx, ny, nz, array_in, direction):
 
         print(array_out.shape)
         raise Exception("double check this, we coded 0.5 for 2D, this handles 3D arrays")
-        """
-        % same as f1=readbin('llc_001_96_288.bin',[97 289],1,'real*8');f1=f1(1:nx,1:3*nx);
-        faces{1}=f1;	
-        faces{2}=f2;
-        faces{3}=f3; 
-        faces{4}=flipud(f4);
-        faces{5}=flipud(f5);
-        """
 
     return array_out, faces
 
@@ -712,10 +704,10 @@ def sph2cart(az, elev, r):
 
     return x, y, z
 
-def load_llc90_grid(grootdir):
+def load_llc90_grid(grootdir, step):
 
     """
-    %% BATHY
+    % BATHY
     % CODES 0 is ECCOv4 
     %       1 is ice shelf cavity
     """
@@ -726,70 +718,176 @@ def load_llc90_grid(grootdir):
 
     if BATHY_CODE == 1:
         bathy_90_fname = os.path.join('/home/sweet/Desktop/ECCO-Insitu-Ian/Matlab-Dependents', 'grid_llc90', 'bathy_with_ice_shelf','BATHY_ICE_SHELF_CAVITY_PLUS_ICE_FRONT_LLC_0090.bin')
+    
+    if step == 1 or step == 2:
+        llcN = 90 # in matlab
+        siz = [llcN, 13*llcN, 1]
+        mform = '>f4' # 'ieee-be' corresponds to f4
 
-    # 1 Good 
-    # bathy_90 = readbin(bathy_90_fname,[llcN 13*llcN 1],1,'real*4',0,'ieee-be')
+        with open(bathy_90_fname, 'rb') as fid:
+            bathy_90 = np.fromfile(fid, dtype=mform)
+            bathy_90 = bathy_90.reshape((siz[0], np.prod(siz[1:])), order='F')
+            bathy_90 = bathy_90.reshape((siz[0], siz[1], siz[2]))
+        blank_90 = np.full_like(bathy_90, np.nan)
+        
+        XC_path = os.path.join(grootdir, 'grid_llc90', 'no_blank', 'XC.data')
+        YC_path = os.path.join(grootdir, 'grid_llc90', 'no_blank', 'YC.data')
+        with open(XC_path, 'rb') as fid:
+            lon_90 = np.fromfile(fid, dtype=mform)
+            # order F: populates column first instead of default Python via row
+            lon_90 = lon_90.reshape((siz[0], np.prod(siz[1:])), order='F')
+            lon_90 = lon_90.reshape((siz[0], siz[1], siz[2]))
+        with open(YC_path, 'rb') as fid:
+            lat_90 = np.fromfile(fid, dtype=mform)
+            lat_90 = lat_90.reshape((siz[0], np.prod(siz[1:])), order='F')
+            lat_90 = lat_90.reshape((siz[0], siz[1], siz[2]))
+
+        if step == 1:
+            hFacC_90_path = os.path.join(grootdir, 'grid_llc90', 'hFacC.data')
+            siz = [llcN, 13*llcN, 50]
+            with open(hFacC_90_path, 'rb') as fid:
+                hFacC_90 = np.fromfile(fid, dtype=mform)
+                hFacC_90 = hFacC_90.reshape((siz[0], np.prod(siz[1:])), order='F')
+                hFacC_90 = hFacC_90.reshape((siz[0], siz[1], siz[2]), order='F')
+
+            wet_ins_90_k = []
+            for k in range(0,50):
+                tmp = hFacC_90[:,:,k].flatten(order = 'F')
+                wet_ins_90_k.append(np.where(tmp > 0)[0]) 
+            
+            return lon_90, lat_90, blank_90, wet_ins_90_k
+        
+        if step == 2:
+            deg2rad = np.pi/180.0
+            lon_90_64 = lon_90.astype(np.float64)
+            lat_90_64 = lat_90.astype(np.float64)
+
+            X_90, Y_90, Z_90 = sph2cart(lon_90_64*deg2rad, lat_90_64*deg2rad, 1.0)
+
+            return lon_90, lat_90,  bathy_90,  X_90, Y_90, Z_90
+    if step == 4:
+
+        llcN = 90 
+        siz = [llcN, 13*llcN, 1]
+        mform = '>f4' # 'ieee-be' corresponds to f4
+
+        XC_path = os.path.join(grootdir, 'grid_llc90', 'no_blank', 'XC.data')
+        YC_path = os.path.join(grootdir, 'grid_llc90', 'no_blank', 'YC.data')
+        with open(XC_path, 'rb') as fid:
+            lon_90 = np.fromfile(fid, dtype=mform)
+            # order F: populates column first instead of default Python via row
+            lon_90 = lon_90.reshape((siz[0], np.prod(siz[1:])), order='F')
+            lon_90 = lon_90.reshape((siz[0], siz[1], siz[2]))
+        with open(YC_path, 'rb') as fid:
+            lat_90 = np.fromfile(fid, dtype=mform)
+            lat_90 = lat_90.reshape((siz[0], np.prod(siz[1:])), order='F')
+            lat_90 = lat_90.reshape((siz[0], siz[1], siz[2]))
+
+        deg2rad = np.pi/180.0
+        lon_90_64 = lon_90.astype(np.float64)
+        lat_90_64 = lat_90.astype(np.float64)
+
+        # USED
+        X_90, Y_90, Z_90 = sph2cart(lon_90_64*deg2rad, lat_90_64*deg2rad, 1.0)
+     
+        AI_90 = np.arange(0, lon_90.size)
+        AI_90 = AI_90.reshape(lon_90.shape, order = 'F')
+
+        hFacC_90_path = os.path.join(grootdir, 'grid_llc90', 'hFacC.data')
+        siz = [llcN, 13*llcN, 50]
+        with open(hFacC_90_path, 'rb') as fid:
+            hFacC_90 = np.fromfile(fid, dtype=mform)
+            hFacC_90 = hFacC_90.reshape((siz[0], np.prod(siz[1:])), order='F')
+            hFacC_90 = hFacC_90.reshape((siz[0], siz[1], siz[2]), order='F')
+
+        wet_ins_90_k = []
+        for k in range(0,50):
+            tmp = hFacC_90[:,:,k].flatten(order = 'F')
+            wet_ins_90_k.append(np.where(tmp > 0)[0]) 
+        
+        delR_90, z_top_90, z_bot_90, z_cen_90 = make_llc90_cell_centers()
+
+        return wet_ins_90_k, X_90, Y_90, Z_90, z_top_90, z_bot_90, hFacC_90, AI_90, z_cen_90
+
+    if step == 5:
+        llcN = 90 # in matlab
+        siz = [llcN, 13*llcN, 1]
+        mform = '>f4' # 'ieee-be' corresponds to f4
+
+        RAC90_path = os.path.join(grootdir, 'grid_llc90', 'no_blank', 'RAC.data')
+        with open(RAC90_path, 'rb') as fid:
+            RAC_90 = np.fromfile(fid, dtype=mform)
+            RAC_90 = RAC_90.reshape((siz[0], np.prod(siz[1:])), order='F')
+            RAC_90 = RAC_90.reshape((siz[0], siz[1], siz[2]))
+
+        # RAC90 USED
+        RAC_90_pf, faces = patchface3D(llcN, llcN*13, 1, RAC_90, 2)
+
+        return RAC_90_pf
+    
+    raise Exception("Uncoded step")
+    """
+    This code is all matlab files that were loaded into the original function. 
+    The ones commented out are unused.
+    """
+    # 1 Good - USED
     llcN = 90 # in matlab
     siz = [llcN, 13*llcN, 1]
-    typ = 1
-    prec ='float32'  # real*4 corresponds to float32
-    skip = 0 
     mform = '>f4' # 'ieee-be' corresponds to f4
     with open(bathy_90_fname, 'rb') as fid:
         bathy_90 = np.fromfile(fid, dtype=mform)
         bathy_90 = bathy_90.reshape((siz[0], np.prod(siz[1:])), order='F')
         bathy_90 = bathy_90.reshape((siz[0], siz[1], siz[2]))
     
-    #2 Good
+    #2 Good - USED BOTH
     XC_path = os.path.join(grootdir, 'grid_llc90', 'no_blank', 'XC.data')
     YC_path = os.path.join(grootdir, 'grid_llc90', 'no_blank', 'YC.data')
-    # lon_90 = readbin('XC.data',[llcN, 13*llcN, 1],1,'real*4',0,'ieee-be');
     with open(XC_path, 'rb') as fid:
         lon_90 = np.fromfile(fid, dtype=mform)
         # order F: populates column first instead of default Python via row
         lon_90 = lon_90.reshape((siz[0], np.prod(siz[1:])), order='F')
         lon_90 = lon_90.reshape((siz[0], siz[1], siz[2]))
-    #lat_90 = readbin('YC.data',[llcN 13*llcN 1],1,'real*4',0,'ieee-be');
     with open(YC_path, 'rb') as fid:
         lat_90 = np.fromfile(fid, dtype=mform)
         lat_90 = lat_90.reshape((siz[0], np.prod(siz[1:])), order='F')
         lat_90 = lat_90.reshape((siz[0], siz[1], siz[2]))
     
+    """
     # 3 Good
     XG_path = os.path.join(grootdir, 'grid_llc90', 'no_blank', 'XG.data')
     YG_path = os.path.join(grootdir, 'grid_llc90', 'no_blank', 'YG.data')    
-    #XG_90 = readbin('XG.data',[llcN 13*llcN 1],1,'real*4',0,'ieee-be');
     with open(XG_path, 'rb') as fid:
         XG_90 = np.fromfile(fid, dtype=mform)
         XG_90 = XG_90.reshape((siz[0], np.prod(siz[1:])), order='F')
         XG_90 = XG_90.reshape((siz[0], siz[1], siz[2]))
-    #YG_90 = readbin('YG.data',[llcN 13*llcN 1],1,'real*4',0,'ieee-be');
     with open(YG_path, 'rb') as fid:
         YG_90 = np.fromfile(fid, dtype=mform)
         YG_90 = YG_90.reshape((siz[0], np.prod(siz[1:])), order='F')
         YG_90 = YG_90.reshape((siz[0], siz[1], siz[2]))
-    
+    """
+
     # 4 good
     RAC90_path = os.path.join(grootdir, 'grid_llc90', 'no_blank', 'RAC.data')
-    #  RAC_90 = readbin('RAC.data',[llcN 13*llcN 1],1,'real*4',0,'ieee-be');
     with open(RAC90_path, 'rb') as fid:
         RAC_90 = np.fromfile(fid, dtype=mform)
         RAC_90 = RAC_90.reshape((siz[0], np.prod(siz[1:])), order='F')
         RAC_90 = RAC_90.reshape((siz[0], siz[1], siz[2]))
 
+    # RAC90 USED
     RAC_90_pf, faces = patchface3D(llcN, llcN*13, 1, RAC_90, 2)
 
+    """
     # 5 good
-    #RC_90 = readbin('RC.data',[1 50],1,'real*4',0,'ieee-be');
     RC90_path = os.path.join(grootdir, 'grid_llc90', 'no_blank', 'RC.data')
-    siz = [1, 50] # [llcN, 13*llcN, 1]
+    siz = [1, 50]
     with open(RC90_path, 'rb') as fid:
         RC_90 = np.fromfile(fid, dtype=mform)
         RC_90 = RC_90.reshape((siz[0], np.prod(siz[1:])), order='F')
         RC_90 = RC_90.reshape((siz[0], siz[1]))
+    """
 
+    """
     # 6 good
-    #RF_90 = readbin('RF.data',[1 50],1,'real*4',0,'ieee-be');
     RF90_path = os.path.join(grootdir, 'grid_llc90', 'no_blank', 'RF.data')
     with open(RF90_path, 'rb') as fid:
         RF_90 = np.fromfile(fid, dtype=mform)
@@ -797,100 +895,95 @@ def load_llc90_grid(grootdir):
         RF_90 = RF_90[0:siz[1]]
         RF_90 = RF_90.reshape((siz[0], np.prod(siz[1:])), order='F')
         RF_90 = RF_90.reshape((siz[0], siz[1]))
-    
+    """
+
+    """
     # 7 Good
     siz = [llcN, 13*llcN, 1]
     DXG_90_path = os.path.join(grootdir, 'grid_llc90', 'no_blank', 'DXG.data')
-    #DXG_90 = readbin('DXG.data',[llcN 13*llcN 1],1,'real*4',0,'ieee-be');
     with open(DXG_90_path, 'rb') as fid:
         DXG_90 = np.fromfile(fid, dtype=mform)
         DXG_90 = DXG_90.reshape((siz[0], np.prod(siz[1:])), order='F')
         DXG_90 = DXG_90.reshape((siz[0], siz[1], siz[2]))
-
-    #DYG_90 = readbin('DYG.data',[llcN 13*llcN 1],1,'real*4',0,'ieee-be');
-    DXG_90_path = os.path.join(grootdir, 'grid_llc90', 'no_blank', 'DYG.data')
-    with open(DXG_90_path, 'rb') as fid:
+    DYG_90_path = os.path.join(grootdir, 'grid_llc90', 'no_blank', 'DYG.data')
+    with open(DYG_90_path, 'rb') as fid:
         DYG_90 = np.fromfile(fid, dtype=mform)
         DYG_90 = DYG_90.reshape((siz[0], np.prod(siz[1:])), order='F')
         DYG_90 = DYG_90.reshape((siz[0], siz[1], siz[2]))
+    """
 
+    """
     # 8 good
-    #DXC_90 = readbin('DXC.data',[llcN 13*llcN 1],1,'real*4',0,'ieee-be');
     DXC_90_path = os.path.join(grootdir, 'grid_llc90', 'no_blank', 'DXC.data')
     with open(DXC_90_path, 'rb') as fid:
         DXC_90 = np.fromfile(fid, dtype=mform)
         DXC_90 = DXC_90.reshape((siz[0], np.prod(siz[1:])), order='F')
         DXC_90 = DXC_90.reshape((siz[0], siz[1], siz[2]))
-    # DYC_90 = readbin('DYC.data',[llcN 13*llcN 1],1,'real*4',0,'ieee-be');
     DYC_90_path = os.path.join(grootdir, 'grid_llc90', 'no_blank', 'DYC.data')
     with open(DYC_90_path, 'rb') as fid:
         DYC_90 = np.fromfile(fid, dtype=mform)
         DYC_90 = DYC_90.reshape((siz[0], np.prod(siz[1:])), order='F')
         DYC_90 = DYC_90.reshape((siz[0], siz[1], siz[2]))
+    """
 
     # 9 Good, index off by 1 to account for matlab/ Python difference
-    # AI_90 = 1:length(lon_90(:));
+    # USED
     AI_90 = np.arange(0, lon_90.size)
-    #  AI_90 = reshape(AI_90, size(lon_90));
     AI_90 = AI_90.reshape(lon_90.shape, order = 'F')
 
     # NOTE: ADDED CODE BC need good_ins_90
     bad_ins_90 = np.where(np.logical_and(lat_90 == 0, lon_90 == 0, bathy_90 == 0).flatten(order = 'F'))[0]
+    # USED
     good_ins_90 = np.setdiff1d(AI_90.flatten(order = 'F').T, bad_ins_90.flatten(order = 'F'))
 
-    # 10 Good
-    # blank_90 = bathy_90.*NaN;
+    # 10 Good - BLANK_90 USED
     blank_90 = np.full_like(bathy_90, np.nan)
-    bathy_90_pf, faces = patchface3D(llcN, llcN*13, 1, bathy_90, 2)
+    # bathy_90_pf, faces = patchface3D(llcN, llcN*13, 1, bathy_90, 2)
 
-    # 11 Good
+    # 11 Good - USED z_top_90 + z_bot_90, z_cen_90
     delR_90, z_top_90, z_bot_90, z_cen_90 = make_llc90_cell_centers()
    
     deg2rad = np.pi/180.0
-    #deg2rad = np.int64(deg2rad)
     lon_90_64 = lon_90.astype(np.float64)
     lat_90_64 = lat_90.astype(np.float64)
 
+    # USED
     X_90, Y_90, Z_90 = sph2cart(lon_90_64*deg2rad, lat_90_64*deg2rad, 1.0)
 
+    """
     # 12 good
-    # cd([llc90_grid_dir])
-    # Depth_90 = readbin('Depth.data',[llcN 13*llcN 1],1,'real*4',0,'ieee-be');
     depth_90_path = os.path.join(grootdir, 'grid_llc90', 'Depth.data')
     with open(depth_90_path, 'rb') as fid:
         Depth_90 = np.fromfile(fid, dtype=mform)
         Depth_90 = Depth_90.reshape((siz[0], np.prod(siz[1:])), order='F')
         Depth_90 = Depth_90.reshape((siz[0], siz[1], siz[2]))
+    """
 
+    # USED
     hFacC_90_path = os.path.join(grootdir, 'grid_llc90', 'hFacC.data')
     siz = [llcN, 13*llcN, 50]
-    # hFacC_90 = readbin('hFacC.data',[llcN 13*llcN 50],1,'real*4',0,'ieee-be');
     with open(hFacC_90_path, 'rb') as fid:
         hFacC_90 = np.fromfile(fid, dtype=mform)
-        # order F: populates column first instead of default Python via row
         hFacC_90 = hFacC_90.reshape((siz[0], np.prod(siz[1:])), order='F')
         hFacC_90 = hFacC_90.reshape((siz[0], siz[1], siz[2]), order='F')
     
-    siz = [llcN, 13*llcN, 1]
+    """
     # 13 Good
     # need to flatten to get 1D array indices like matlab
     hFacC_90_flat = hFacC_90.flatten(order = 'F')
-    # wet_ins_90 = find(hFacC_90 > 0);
-    # returns a tuple, get first element of arr index
     wet_ins_90 = np.where(hFacC_90_flat > 0)[0]
-    # dry_ins_90 = find(hFacC_90 == 0);
     dry_ins_90 = np.where(hFacC_90 == 0)[0]
+    """
 
-    # 14 NOTE: problems - Python cannot have numpy arr of different sizes
-    # so result is a list of numpy arrs 
-    dry_ins_90_k = []
+    # 14 NOTE: problems - Python cannot have numpy arr of different sizes so result is a list of numpy arrs 
+    # dry_ins_90_k = []
     wet_ins_90_k = []
-    nan_ins_90_k = []
+    # nan_ins_90_k = []
     for k in range(0,50):
         tmp = hFacC_90[:,:,k].flatten(order = 'F')
-        dry_ins_90_k.append(np.where(tmp == 0)[0])
-        wet_ins_90_k.append(np.where(tmp > 0)[0])
-        nan_ins_90_k.append(np.where(np.isnan(tmp))[0])  
+        # dry_ins_90_k.append(np.where(tmp == 0)[0])
+        wet_ins_90_k.append(np.where(tmp > 0)[0]) # USED
+        # nan_ins_90_k.append(np.where(np.isnan(tmp))[0])  
     """
     MATLAB:
     for k = 1:50                                # gets vertical slices
@@ -902,15 +995,14 @@ def load_llc90_grid(grootdir):
     # result: all arrays are 2D and contain the indexes of where in hFacC_90 there exists said elements
     """
 
+    """
     # 16 Good
-    # hf0_90 = hFacC_90[:,:,1]
     hf0_90 = hFacC_90[:,:,0]
     temp = hf0_90
     temp = np.ceil(temp)
+    """
 
     # 17 Good
-    # NOTE: problems = matlab slices different, had to recode for 2D
-    # landmask_90_pf = patchface3D(llcN, llcN*13, 1, temp, 2)
-    landmask_90_pf, faces = patchface3D(llcN, llcN*13, 1, temp, 2.5)
+    # landmask_90_pf, faces = patchface3D(llcN, llcN*13, 1, temp, 2.5)
 
     return lon_90, lat_90, blank_90, wet_ins_90_k, RAC_90_pf, bathy_90, good_ins_90, X_90, Y_90, Z_90, z_top_90, z_bot_90, hFacC_90, AI_90, z_cen_90 

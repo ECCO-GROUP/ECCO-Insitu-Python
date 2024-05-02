@@ -1,21 +1,12 @@
 import copy
 import glob
 import os
-
 import numpy as np
 
 from tools import MITprof_read, load_llc270_grid, load_llc90_grid
 
 
 def update_gamma_factor_on_prepared_profiles(run_code, MITprofs, grid_dir):
-
-    # SET INPUT PARAMETERS
-    fillVal=-9999
-    checkVal=-9000
-
-    # --- save format  ---
-    #   0 = netcdf
-    #   1 = matlab
             
     # ----  apply_gamma_factor  ----- 
     #   0 = remove gamma factor from sigma
@@ -23,9 +14,6 @@ def update_gamma_factor_on_prepared_profiles(run_code, MITprofs, grid_dir):
     #   gamma factor is factor 1/sqrt(alpha)
     #    where alpha = area/max(area) of the grid cell area in which
     #    this profile is found.
-
-    save_output_to_disk = 1
-
     if run_code == '20181202_apply_gamma': 
         apply_gamma_factor = 1 # use the gamma or not.
         save_output_to_disk = 0
@@ -161,11 +149,11 @@ def update_gamma_factor_on_prepared_profiles(run_code, MITprofs, grid_dir):
     #  profile file.
     if apply_gamma_factor == 1:
         if llcN == 90:
-            lon_90, lat_90, blank_90, wet_ins_90_k, RAC_90_pf, bathy_90, good_ins_90, X_90, Y_90, Z_90, z_top_90, z_bot_90, hFacC_90, AI_90, z_cen_90 = load_llc90_grid(grid_dir)
+            RAC_90_pf = load_llc90_grid(grid_dir, 5)
             RAC = copy.deepcopy(RAC_90_pf)
                 
         if llcN == 270:
-            lon_270, lat_270, blank_270, wet_ins_270_k, X_270, Y_270, Z_270, bathy_270, good_ins_270, RAC_270_pf = load_llc270_grid(grid_dir)
+            lon_270, lat_270, blank_270, wet_ins_270_k, X_270, Y_270, Z_270, bathy_270, good_ins_270, RAC_270_pf = load_llc270_grid(grid_dir, 5)
             RAC = copy.deepcopy(RAC_270_pf)
 
     # for ilist = 1:length(MITprofs)

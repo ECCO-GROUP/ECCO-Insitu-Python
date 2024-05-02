@@ -64,8 +64,6 @@ class TriScatteredInterp:
     
 def update_spatial_bin_index_on_prepared_profiles(run_code, MITprofs, grid_dir):
 
-    make_figs = 0
-
     if run_code == 10242 or run_code == 2562:
             
         # the bin data have to be projected to the model grid;
@@ -75,22 +73,6 @@ def update_spatial_bin_index_on_prepared_profiles(run_code, MITprofs, grid_dir):
 
         bin_llcN = 90
 
-        # was stored in list?
-        prof_bin_name_1 = 'prof_bin_id_a'
-        prof_bin_name_2 = 'prof_bin_id_b'
-        
-        save_output_to_disk = 0
-        num_MITprofs = len(MITprofs)
-            
-    """
-    cd(bin_dir)
-    num_bins = length(bin_file);
-    for i = 1:num_bins
-        fprintf(['bin ' padzero(i,2) '\n'])
-        bin{i} = readbin([bin_dir bin_file{i}], [bin_llcN 13*bin_llcN 1 1],1,'real*4',0,'ieee-be');
-        stats(bin{i})
-    end
-    """
     # read binary files
     siz = [bin_llcN, 13*bin_llcN, 1, 1]
     typ = 1
@@ -112,19 +94,7 @@ def update_spatial_bin_index_on_prepared_profiles(run_code, MITprofs, grid_dir):
 
     if bin_llcN  == 90:
 
-        lon_90, lat_90, blank_90, wet_ins_90_k, RAC_90_pf, bathy_90, good_ins_90, X_90, Y_90, Z_90, z_top_90, z_bot_90, hFacC_90, AI_90, z_cen_90 = load_llc90_grid(grid_dir)
-        """
-        Cant load matlab file
-        cd(llc90_grid_dir)
-        NOTE: llc90_grid_dir = "C:\\Users\\szswe\\Desktop\\grid_llc90"
-        if exist('F_llc90_ALL_INS_SURF_XYZ_to_INDEX.mat','file')
-            ['loading F']
-            load('F_llc90_ALL_INS_SURF_XYZ_to_INDEX');
-            ['loaded F']
-        else
-            make_F_llc90_ALL_INS_SURF_XYZ_to_INDEX;
-        end
-        """
+        lon_90, lat_90, bathy_90, X_90, Y_90, Z_90 = load_llc90_grid(grid_dir, 2)
 
         F = make_F_llc90_ALL_INS_SURF_XYZ_to_INDEX(bathy_90, X_90, Y_90, Z_90)
         X = X_90.flatten(order = 'F')
@@ -143,7 +113,8 @@ def update_spatial_bin_index_on_prepared_profiles(run_code, MITprofs, grid_dir):
         lat_llc = lat_270.flatten(order = 'F')
         #NOTE: not sure if deep copy is needed? check to see if we're changing these vals
  
-    # verify that our little trick works in 4 parts of the earth'
+    
+    # verify that our little trick works in 4 parts of the earth
     deg2rad = np.pi/180.0
     for i in range(1,5):
         if i == 1:
@@ -179,37 +150,11 @@ def update_spatial_bin_index_on_prepared_profiles(run_code, MITprofs, grid_dir):
     prof_llcN_cell_index = F(np.column_stack((prof_x, prof_y, prof_z)))
     prof_llcN_cell_index  = prof_llcN_cell_index.astype(int)
 
-    """
-    if 'prof_gci' in MITprof:
-        if unique(MITprof.prof_gci - prof_llcN_cell_index) ~= 0
-            [' prof_llcN_cell index does not equal prof_gci!!!']
-            break;
-        else
-            'prof_gci and prof_llcN_cell_index are the same'
-    """  
-    """
-    for bin_i = 1:num_bins
-        bin_tmp = bin{bin_i};
-        MITprof = setfield(MITprof, prof_bin_name{bin_i}, ...
-            bin_tmp(prof_llcN_cell_index));
-    """
-     # loop through the different geodesic bins
+    # loop through the different geodesic bins
     bin_1 = bin_1.flatten(order = 'F')
     bin_2 = bin_2.flatten(order = 'F')
     MITprofs['prof_bin_id_a'] = bin_1[prof_llcN_cell_index]
     MITprofs['prof_bin_id_b'] = bin_2[prof_llcN_cell_index]
-    """
-    if save_output_to_disk
-        %  Write output
-        ['writing output to netcdf']
-        fileOut=[output_dir '/' fDataOut{ilist}]
-        fprintf('%s\n',fileOut);
-        write_profile_structure_to_netcdf(MITprof_new,fileOut);
-    else
-        % add to MITprofs container
-        MITprofs_new{ilist} = MITprof;
-    end
-    """
 
 def main(run_code, MITprofs, grid_dir):
 
