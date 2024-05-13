@@ -1,90 +1,45 @@
 import argparse
 import glob
 import os
-from os.path import dirname, join as pjoin
 import numpy as np
 import scipy.io as sio
 import netCDF4 as nc
 from scipy.interpolate import griddata
-from tools import MITprof_read, sph2cart
+from tools import MITprof_read, intrep_check, sph2cart
 
-def update_monthly_mean_TS_clim_WOA13v2_on_prepared_profiles(run_code, MITprofs):
+def update_monthly_mean_TS_clim_WOA13v2_on_prepared_profiles(TS_clim_dir, MITprofs):
+    """
+    Assigns the WOA13 T and S climatology values to MITprof objects. 
 
+    Input Parameters:
+        TS_clim_dir: Path to WOA13_v2_TS_clim_merged_with_potential_T.nc
+        MITprof: a single MITprof object
+
+    Output:
+        Operates on MITprofs directly 
+    
+    """
 
     fillVal=-9999
-    # climatolgy dir and filenames
-    TS_clim_dir = ''
 
+    TS_clim_fname = 'WOA13_v2_TS_clim_merged_with_potential_T.nc'
+    TS_clim_filename = os.path.join(TS_clim_dir, TS_clim_fname)
+    TS_data = nc.Dataset(TS_clim_filename)
 
-    if run_code == '20181202_NODC':
-            
-        TS_clim_dir = '/home/sweet/Desktop/ECCO-Insitu-Ian/Matlab-Dependents/TS Climatology'
-        TS_clim_fname = 'WOA13_v2_TS_clim_merged_with_potential_T.nc'
-        
-        TS_clim_filename = os.path.join(TS_clim_dir, TS_clim_fname)
-        TS_data = nc.Dataset(TS_clim_filename)
+    T_clim = TS_data.variables['potential_T_monthly'][:].filled(np.nan)
+    S_clim = TS_data.variables['S_monthly'][:].filled(np.nan)
 
-        #T_clim = WOA_2013_v2_clim.potential_T_monthly
-        T_clim = TS_data.variables['potential_T_monthly'][:].filled(np.nan)
-        #S_clim = WOA_2013_v2_clim.S_monthly
-        S_clim = TS_data.variables['S_monthly'][:].filled(np.nan)
-
-        #lon = WOA_2013_v2_clim.lon
-        lon = TS_data.variables['lon'][:]
-        #lat = WOA_2013_v2_clim.lat
-        lat = TS_data.variables['lat'][:]
-        
-        #num_clim_depths = length(WOA_2013_v2_clim.depth.data)
-        clim_depths =  TS_data.variables['depth'][:]
-        num_clim_depths = len(clim_depths)
-
-    """  
-    # MATLAB CODE
-    elif run_code == '20181203_ARGO':
-        save_output_to_disk = 0
-        make_figs = 0
-        
-        TS_clim_dir = ['/home/ifenty/data/observations/TS_climatology/WOA_2013_V2/1995-2014-merged']
-        TS_clim_fname = ['WOA13_v2_TS_clim_potential_T_argo55_vertical_levels.mat'];
-
-        cd(TS_clim_dir);
-        load(TS_clim_fname);
-
-        T_clim = WOA_2013_v2_clim_55z.potential_T_monthly;
-        S_clim = WOA_2013_v2_clim_55z.S_monthly;
-        
-        lon = WOA_2013_v2_clim_55z.lon;
-        lat = WOA_2013_v2_clim_55z.lat;
-        
-        num_clim_depths = length(WOA_2013_v2_clim_55z.depth);
-           
-    elif run_code == '20181203_97z':
-            
-        save_output_to_disk = 0;
-        make_figs = 0;
-        
-        % the climatology
-        TS_clim_dir = ['/home/ifenty/data/observations/TS_climatology/WOA_2013_V2/1995-2014-merged']
-        TS_clim_fname = ['WOA13_v2_TS_clim_potential_T_SIO_2018_97_vertical_levels.mat'];
-
-        cd(TS_clim_dir);
-        load(TS_clim_fname);
-
-        T_clim = WOA_2013_v2_clim_97z.potential_T_monthly;
-        S_clim = WOA_2013_v2_clim_97z.S_monthly;
-        
-        lon = WOA_2013_v2_clim_97z.lon;
-        lat = WOA_2013_v2_clim_97z.lat;
-        
-        num_clim_depths = length(WOA_2013_v2_clim_97z.depth);
-    """
+    lon = TS_data.variables['lon'][:]
+    lat = TS_data.variables['lat'][:]
+    
+    clim_depths =  TS_data.variables['depth'][:]
+    num_clim_depths = len(clim_depths)
 
     # mesh the climatology lon and lats
     lon_woam, lat_woam = np.meshgrid(lon.data, lat.data)
     deg2rad = np.float64(np.pi/180.0)
  
     # POINTS TO USE ARE THOSE POINTS WITH VALID DATA at the surface
-    # good_clim_ins=find(~isnan(squeeze(S_clim(1,1,:,:))));
     subset = S_clim[0,0].flatten(order= 'F')
     good_clim_ins = np.where(~np.isnan(subset))[0]
 
@@ -95,42 +50,11 @@ def update_monthly_mean_TS_clim_WOA13v2_on_prepared_profiles(run_code, MITprofs)
     AI = np.arange(0,X_woa.size).astype(np.float64)
     
     # these are the x,y,z coordinates of all points in the climatology
-    #xyz= [X_woa(:) Y_woa(:) Z_woa(:)];
     xyz = np.column_stack((X_woa, Y_woa, Z_woa)).astype(np.float64)
 
-    #'making scattered interpolant'
-    #F  = scatteredInterpolant(xyz, AI(:),'nearest');
-    """
-    NOTE: Don't need to make F rn
-    F = griddata(xyz, AI, (X_woa, Y_woa, Z_woa), method='nearest')
-    F = F.astype(int)
-    """
-    """
     # verify that our little trick works in 4 parts of the earth
-    for i in np.arange(1,5):
-        if i == 1:
-            test_lat = 56
-            test_lon = -40
-        if i == 2:
-            test_lat = 60
-            test_lon = 10
-        if i == 3:
-            test_lat = -60
-            test_lon = -120
-        if i == 4:
-            test_lat = -69
-            test_lon = 60
-        test_x, test_y, test_z = sph2cart(test_lon*deg2rad, test_lat*deg2rad, 1)
-        
-        F = griddata(xyz, AI, (test_x, test_y, test_z), method='nearest')
-        test_ind = F.astype(int)
-        print("{} {} {} | {} {} {}".format(X_woa[test_ind], Y_woa[test_ind], Z_woa[test_ind], test_x, test_y, test_z))
-        print("{} {} | {} {}".format(lat_woam[good_clim_ins[test_ind]], lon_woam[good_clim_ins[test_ind]], test_lat, test_lon))
-        print("===========================")
-    """
-    # for ilist = 1:length(MITprofs)
-    #     fprintf(['MITPROF ' num2str(ilist) '  of  '  num2str(length(MITprofs)) '\n'])
-    #     MITprof = MITprofs{ilist};
+    intrep_check(xyz, AI, X_woa, Y_woa, Z_woa, lat_woam, lon_woam, 3, good_clim = good_clim_ins)
+
     num_profs = len(MITprofs['prof_lat'])
     num_prof_depths = len(MITprofs['prof_depth'])
 
@@ -138,8 +62,6 @@ def update_monthly_mean_TS_clim_WOA13v2_on_prepared_profiles(run_code, MITprofs)
     #  no data => profX == -9999, valid value in climatology, 0 in weight
     
     # determine the month for every profile
-    #tmp = str(MITprofs['prof_YYYYMMDD'])
-    #prof_month = num(tmp(:,5:6));
     prof_month = ((MITprofs['prof_YYYYMMDD'] % 10000) // 100).astype(int)
 
     # 'mapping profiles to x,y,z'
@@ -148,12 +70,11 @@ def update_monthly_mean_TS_clim_WOA13v2_on_prepared_profiles(run_code, MITprofs)
     prof_x, prof_y, prof_z = sph2cart(MITprofs['prof_lon']*deg2rad, MITprofs['prof_lat']*deg2rad, 1)
     
     # map a climatology grid index to each profile.
-    #prof_clim_cell_index = F(prof_x, prof_y, prof_z);
     prof_clim_cell_index = griddata(xyz, AI, (prof_x, prof_y, prof_z), method='nearest')
     prof_clim_cell_index = prof_clim_cell_index.astype(int)
+   
     """
-    NOTE: code to check prof_x/prof_y/prof_z difference
-    #prof_x = np.around(prof_x, decimals=27)
+    #NOTE: code to check prof_x/prof_y/prof_z difference
     import scipy.io as sio
     mat_contents = sio.loadmat('/home/sweet/Desktop/ECCO-Insitu-Ian/Matlab-Dependents/TS Climatology/prof_x.mat')
     mat_contents['prof_x'] = np.squeeze(mat_contents['prof_x'])
@@ -165,10 +86,9 @@ def update_monthly_mean_TS_clim_WOA13v2_on_prepared_profiles(run_code, MITprofs)
             print("--------")
             ticker = ticker + 1
     raise Exception(ticker)
-    
     """
     """
-    NOTE: code to check for prof_cell... intrep difference
+    #NOTE: code to check for prof_cell... intrep difference
     import scipy.io as sio
     mat_contents = sio.loadmat('/home/sweet/Desktop/ECCO-Insitu-Ian/Matlab-Dependents/TS Climatology/cells.mat')
     mat_contents['prof_clim_cell_index'] = np.squeeze(mat_contents['prof_clim_cell_index'])
@@ -178,20 +98,22 @@ def update_monthly_mean_TS_clim_WOA13v2_on_prepared_profiles(run_code, MITprofs)
         if prof_clim_cell_index[a] != mat_contents['prof_clim_cell_index'][a]:
             if not (np.isnan(prof_clim_cell_index[a]) and np.isnan(mat_contents['prof_clim_cell_index'][a])):
                 print(prof_clim_cell_index[a])
-                print(mat_contents['prof_clim_cell_index'][a])    print(np.where(np.isnan(prof_clim_S))[0].size)
+                print(mat_contents['prof_clim_cell_index'][a])    
+     
                 print("{}".format(a))
                 ticker = ticker + 1
                 print("--------")
 
     raise Exception(ticker)
-    """   
+    """
+
     # NOTE: importing from matlab the interp -> so we can continue w/ coding rest of pipeline
     import scipy.io as sio
     mat_contents = sio.loadmat('/home/sweet/Desktop/ECCO-Insitu-Ian/Matlab-Dependents/TS Climatology/cells.mat')
     mat_contents['prof_clim_cell_index'] = np.squeeze(mat_contents['prof_clim_cell_index'])
     mat_contents['prof_clim_cell_index'] = mat_contents['prof_clim_cell_index'] - 1
     prof_clim_cell_index = mat_contents['prof_clim_cell_index']
-            
+    
     # go through each z level in the profile array
     # set the default climatology value to be fillVal (-9999)
     prof_clim_T = np.ones((num_profs, num_prof_depths)) * fillVal
@@ -260,24 +182,18 @@ def update_monthly_mean_TS_clim_WOA13v2_on_prepared_profiles(run_code, MITprofs)
                     print("-------------")
     """
     
-def main(run_code, MITprofs, grid_dir):
+def main(TS_clim_dir, MITprofs):
 
-    grid_dir = '/home/sweet/Desktop/ECCO-Insitu-Ian/Matlab-Dependents'
-    #llc270_grid_dir = 'C:\\Users\\szswe\\Downloads\\grid_llc270_common-20240125T224704Z-001\\grid_llc270_common'
     print("step 03: update_monthly_mean_TS_clim_WOA13v2_on_prepared_profiles")
-    update_monthly_mean_TS_clim_WOA13v2_on_prepared_profiles(run_code, MITprofs)
+    update_monthly_mean_TS_clim_WOA13v2_on_prepared_profiles(TS_clim_dir, MITprofs)
 
 if __name__ == '__main__':
-    """
+
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-r", "--run_code", action= "store",
-                        help = "Run code: 90 or 270" , dest= "run_code",
+    parser.add_argument("-t", "--TS_clim_dir", action= "store",
+                        help = "Directory to TS Clim file" , dest= "ts_dir",
                         type = int, required= True)
-
-    parser.add_argument("-g", "--grid_dir", action= "store",
-                        help = "File path to 90/270 grids" , dest= "grid_dir",
-                        type = str, required= True)
     
     parser.add_argument("-m", "--MIT_dir", action= "store",
                     help = "File path to NETCDF files containing MITprofs info." , dest= "MIT_dir",
@@ -286,26 +202,13 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    run_code = args.run_code
-    grid_dir = args.grid_dir
+    TS_clim_dir = args.ts_dir
     MITprofs_fp = args.MIT_dir
-    """
 
-    MITprofs_fp = '/home/sweet/Desktop/ECCO-Insitu-Ian/Python-Dest'
-    MITprofs_fp = '/home/sweet/Desktop/ECCO-Insitu-Ian/Original-Matlab-Dest/20190131_END_CHAIN'
-
-    """
-    if run_code != 90 or run_code != 270:
-        raise Exception("Runcode has to be 90 or 270!")
-    """
-    
     nc_files = glob.glob(os.path.join(MITprofs_fp, '*.nc'))
     if len(nc_files) == 0:
         raise Exception("Invalid NC filepath")
     for file in nc_files:
         MITprofs = MITprof_read(file, 3)
-
-    run_code = '20181202_NODC'
-    grid_dir = "hehe"
-
-    main(run_code, MITprofs, grid_dir)
+    
+    main(TS_clim_dir, MITprofs)

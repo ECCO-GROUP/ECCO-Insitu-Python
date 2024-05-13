@@ -1,3 +1,4 @@
+import argparse
 import glob
 import os
 import numpy as np
@@ -7,12 +8,6 @@ from tools import MITprof_read
 
 def extract_profile_subset_from_MITprof(MITprofs, prof_ins, prof_depth_ins):
     """
-    %%
-    % Filename; extract_profile_subset_from_MITprof
-    %  ** former filename :
-    % Date Created : 2018-06-05
-    % Last Modified: 2018-06-05
-
     % this script extracts a subset of profiles from an MITprof object.
     % it returns this subset as a new MITprof object
 
@@ -78,134 +73,21 @@ def extract_profile_subset_from_MITprof(MITprofs, prof_ins, prof_depth_ins):
 
         MITprofSub.update({key: tmp})
    
-    """
-    # NOTE: not added to final NETCDF file, unused var that messes up step 09
-    MITprofSub.update({"np": len(prof_ins)})
-    MITprofSub.update({"nd": len(prof_depth_ins)})
-    """
 
     return MITprofSub
     
 
-def update_remove_zero_T_S_weighted_profiles_from_MITprof(run_code, MITprofs, grid_dir):
+def update_remove_zero_T_S_weighted_profiles_from_MITprof(MITprofs):
     """
-    % Remove profiles that whose T and S weights are all zero from 
-    % from MITprof structures
-    %
-    % Filename; update_remove_zero_T_S_weighted_profiles_from_MITprof
-    %
-    %  ** former filename :
-    % Date Created: 2018-06-07
-    % Last Modified: 2018-12-03
-    %
-    % notes:
-    %    extraction code can also subset the number of depths.
-    %    2018-12-02 : added ability to pass MITprofs objects
-    %    2018-12-03 : fixed output to netcdf.
-    """
+    Remove profiles that whose T and S weights are all zero from 
+    from MITprof structures
+    
+    Input Parameters:
+        MITprof: a single MITprof object
 
-    fillVal=-9999
-    checkVal=-9000
-    debug_code=0
-    save_output_to_disk = 1
-
-    if run_code == '20181202':
-        save_output_to_disk = 0
-            
-    if run_code == '20181015_ARGO':
-        print("untranslated")
-        """
-        basedir = ['/home/ifenty/data/observations/insitu/ARGO/from_gael_June2018/combined_by_latest/']
-        input_dir = [basedir 'step_05_gamma']
-        output_dir = [basedir 'step_06_filtered']
-        
-        file_suffix_in  = 'step_05.nc'
-        file_suffix_out = 'step_06.nc';
-        
-        cd(input_dir);
-        pwd
-        f = dir(['*nc']);
-        for i = 1:length(f)
-            fDataIn{i}=   f(i).name;
-            fDataOut{i} =[f(i).name(1:end-length(file_suffix_in)) ...
-                file_suffix_out];
-        end
-        """
-    if run_code == 'NODC_20181010_clim_S':
-        print("untranslated")
-        """ 
-        rootdir = ['/home/ifenty/data/observations/insitu/NODC/NODC_20180508/']
-        input_dir  = [rootdir '/all/step_06_gamma_clim_S']
-        output_dir = [rootdir '/all/step_07_filtered_clim_S']
-        
-        file_suffix_in  = 'step_06'
-        file_suffix_out = 'step_07'
-        
-        cd(input_dir);
-        f = dir(['*nc']);
-        for i = 1:length(f)
-            fDataIn{i}=   f(i).name;
-            
-            tmp = f(i).name;
-            tmp1 = strfind(tmp, file_suffix_in);
-            tmp2 = length(file_suffix_in);
-            fsi_start = tmp1;
-            fsi_end   = tmp1 + tmp2;
-            tmp3 = [tmp(1:fsi_start-1) file_suffix_out tmp(fsi_end:end-10) '.nc'];
-            
-            fDataOut{i} = tmp3;
-        end
-        fDataOut{1}
-        """
-    if run_code == '20181015_llc90_ITP':
-        print("untranslated")
-        """
-        rootdir = ['/home/ifenty/data/observations/insitu/ITP/SIO_201810/TO_JPL_2018/']
-        input_dir  = [rootdir '/step_05_gamma']
-        output_dir = [rootdir '/step_06_filtered']
-        
-        file_suffix_in  = 'step_05'
-        file_suffix_out = 'step_06'
-        
-        cd(input_dir);
-        f = dir(['*nc']);
-        for i = 1:length(f)
-            fDataIn{i}=   f(i).name;
-            
-            tmp = f(i).name;
-            tmp1 = strfind(tmp, file_suffix_in);
-            tmp2 = length(file_suffix_in);
-            fsi_start = tmp1;
-            fsi_end   = tmp1 + tmp2;
-            tmp3 = [tmp(1:fsi_start-1) file_suffix_out tmp(fsi_end:end-10) '.nc'];
-            
-            fDataOut{i} = tmp3;
-        """
-    if run_code == '20181015_llc90_GOSHIP':
-        print("untranslated")
-        """
-        rootdir = ['/home/ifenty/data/observations/insitu/GO-SHIP/SIO_201810/TO_JPL_2018/']
-        input_dir  = [rootdir '/step_05_gamma']
-        output_dir = [rootdir '/step_06_filtered']
-        
-        file_suffix_in  = 'step_05'
-        file_suffix_out = 'step_06'
-        
-        cd(input_dir);
-        f = dir(['*nc']);
-        for i = 1:length(f)
-            fDataIn{i}=   f(i).name;
-            
-            tmp = f(i).name;
-            tmp1 = strfind(tmp, file_suffix_in);
-            tmp2 = length(file_suffix_in);
-            fsi_start = tmp1;
-            fsi_end   = tmp1 + tmp2;
-            tmp3 = [tmp(1:fsi_start-1) file_suffix_out tmp(fsi_end:end-10) '.nc'];
-            
-            fDataOut{i} = tmp3;
-        """
-
+    Output:
+        Operates on MITprofs directly 
+    """     
 
     total_Tweight = np.sum(MITprofs['prof_Tweight'])
     total_Sweight = np.sum(MITprofs['prof_Sweight'])
@@ -275,26 +157,14 @@ def update_remove_zero_T_S_weighted_profiles_from_MITprof(run_code, MITprofs, gr
     
     MITprofs.update(MITprof_new)
         
+def main(MITprofs):
 
-def main(run_code, MITprofs, grid_dir):
-
-    grid_dir = '/home/sweet/Desktop/ECCO-Insitu-Ian/Matlab-Dependents'
-    #llc270_grid_dir = 'C:\\Users\\szswe\\Downloads\\grid_llc270_common-20240125T224704Z-001\\grid_llc270_common'
     print("update_remove_zero_T_S_weighted_profiles_from_MITprof")
-    update_remove_zero_T_S_weighted_profiles_from_MITprof(run_code, MITprofs, grid_dir)
+    update_remove_zero_T_S_weighted_profiles_from_MITprof(MITprofs)
 
 if __name__ == '__main__':
-    """
+
     parser = argparse.ArgumentParser()
-
-    parser.add_argument("-r", "--run_code", action= "store",
-                        help = "Run code: 90 or 270" , dest= "run_code",
-                        type = int, required= True)
-
-    parser.add_argument("-g", "--grid_dir", action= "store",
-                        help = "File path to 90/270 grids" , dest= "grid_dir",
-                        type = str, required= True)
-    
     parser.add_argument("-m", "--MIT_dir", action= "store",
                     help = "File path to NETCDF files containing MITprofs info." , dest= "MIT_dir",
                     type = str, required= True)
@@ -305,28 +175,19 @@ if __name__ == '__main__':
     run_code = args.run_code
     grid_dir = args.grid_dir
     MITprofs_fp = args.MIT_dir
-    """
 
     MITprofs_fp = '/home/sweet/Desktop/ECCO-Insitu-Ian/Python-Dest'
     MITprofs_fp = '/home/sweet/Desktop/ECCO-Insitu-Ian/Original-Matlab-Dest/20190131_END_CHAIN'
 
-    """
-    if run_code != 90 or run_code != 270:
-        raise Exception("Runcode has to be 90 or 270!")
-    """
-    
     nc_files = glob.glob(os.path.join(MITprofs_fp, '*.nc'))
     if len(nc_files) == 0:
         raise Exception("Invalid NC filepath")
     for file in nc_files:
         MITprofs = MITprof_read(file, 8)
 
-    run_code = '20181202'
-    grid_dir = "hehe"
-
     # Convert all masked arrs to non-masked types
     for keys in MITprofs.keys():
         if ma.isMaskedArray(MITprofs[keys]):
             MITprofs[keys] = MITprofs[keys].filled(np.NaN)
     
-    main(run_code, MITprofs, grid_dir)
+    main(MITprofs)

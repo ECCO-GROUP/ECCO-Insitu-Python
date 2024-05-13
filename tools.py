@@ -2,6 +2,203 @@
 import os
 import numpy as np
 import netCDF4 as nc
+import xarray as xr
+from scipy.interpolate import griddata
+
+def MITprof_write_to_nc(dest_dir, MITprofs, step):
+
+    print("Writing NETCDF files")
+
+    df_HHMMSS = xr.DataArray(MITprofs['prof_HHMMSS'], dims = ['iPROF'])
+    df_HHMMSS.name = 'prof_HHMMSS'
+    df_HHMMSS.encoding
+
+    df_YYYYMMDD = xr.DataArray(MITprofs['prof_YYYYMMDD'], dims = ['iPROF'])
+    df_YYYYMMDD.name = 'prof_YYYYMMDD'
+    df_YYYYMMDD.encoding
+
+    df_lat = xr.DataArray(MITprofs['prof_lat'], dims = ['iPROF'])
+    df_lat.name = 'prof_lat'
+    df_lat.encoding
+
+    df_lon = xr.DataArray(MITprofs['prof_lon'], dims = ['iPROF'])
+    df_lon.name = 'prof_lon'
+    df_lon.encoding
+
+    df_basin = xr.DataArray(MITprofs['prof_basin'], dims = ['iPROF'])
+    df_basin.name = 'prof_basin'
+    df_basin.encoding
+
+    df_date = xr.DataArray(MITprofs['prof_date'], dims = ['iPROF'])
+    df_date.name = 'prof_date'
+    df_date.encoding
+
+    df_depth = xr.DataArray(MITprofs['prof_depth'], dims = ['iDEPTH'])
+    df_depth.name = 'prof_depth'
+    df_depth.encoding
+
+    df_descr = xr.DataArray(MITprofs['prof_descr'], dims = ['iPROF', 'iTXT'])
+    df_descr.name = 'prof_descr'
+    df_descr.encoding
+
+    df_point = xr.DataArray(MITprofs['prof_point'], dims = ['iPROF'])
+    df_point.name = 'prof_point'
+    df_point.encoding
+
+    df_S = xr.DataArray(MITprofs['prof_S'], dims = ['iPROF', 'iDEPTH'])
+    df_S.name = 'prof_S'
+    df_S.encoding
+
+    df_S_flag = xr.DataArray(MITprofs['prof_Sflag'], dims = ['iPROF', 'iDEPTH'])
+    df_S_flag.name = 'prof_Sflag'
+    df_S_flag.encoding
+
+    df_T = xr.DataArray(MITprofs['prof_T'], dims = ['iPROF', 'iDEPTH'])
+    df_T.name = 'prof_T'
+    df_T.encoding
+
+    df_T_flag = xr.DataArray(MITprofs['prof_Tflag'], dims = ['iPROF', 'iDEPTH'])
+    df_T_flag.name = 'prof_Tflag'
+    df_T_flag.encoding
+
+    # Output file with correct variables 
+    if step == 0:
+        output_DS = xr.merge([df_HHMMSS, df_YYYYMMDD, df_lat, df_lon, df_basin, df_date, df_depth, df_descr, df_point, df_S, df_S_flag, df_T, df_T_flag])
+    if step >= 1:
+        df_interp_XC11 = xr.DataArray(MITprofs['prof_interp_XC11'], dims = ['iPROF'])
+        df_interp_XC11.name = 'prof_interp_XC11'
+        df_interp_XC11.encoding
+
+        df_interp_YC11 = xr.DataArray(MITprofs['prof_interp_YC11'], dims = ['iPROF'])
+        df_interp_YC11.name = 'prof_interp_YC11'
+        df_interp_YC11.encoding
+
+        df_interp_XCNINJ = xr.DataArray(MITprofs['prof_interp_XCNINJ'], dims = ['iPROF'])
+        df_interp_XCNINJ.name = 'prof_interp_XCNINJ'
+        df_interp_XCNINJ.encoding
+
+        df_interp_YCNINJ = xr.DataArray(MITprofs['prof_interp_YCNINJ'], dims = ['iPROF'])
+        df_interp_YCNINJ.name = 'prof_interp_YCNINJ'
+        df_interp_YCNINJ.encoding
+
+        df_interp_i = xr.DataArray(MITprofs['prof_interp_i'], dims = ['iPROF'])
+        df_interp_i.name = 'prof_interp_i'
+        df_interp_i.encoding
+
+        df_interp_j = xr.DataArray(MITprofs['prof_interp_j'], dims = ['iPROF'])
+        df_interp_j.name = 'prof_interp_j'
+        df_interp_j.encoding
+
+        df_interp_weights = xr.DataArray(MITprofs['prof_interp_weights'], dims = ['iPROF'])
+        df_interp_weights.name = 'prof_interp_weights'
+        df_interp_weights.encoding
+
+        df_interp_lon = xr.DataArray(MITprofs['prof_interp_lon'], dims = ['iPROF'])
+        df_interp_lon.name = 'prof_interp_lon'
+        df_interp_lon.encoding
+        
+        df_interp_lat = xr.DataArray(MITprofs['prof_interp_lat'], dims = ['iPROF'])
+        df_interp_lat.name = 'prof_interp_lat'
+        df_interp_lat.encoding
+
+        if step == 1:
+            output_DS = xr.merge([df_HHMMSS, df_YYYYMMDD, df_lat, df_lon, df_basin, df_date, df_depth, df_descr, df_point, df_S, df_S_flag, df_T, df_T_flag, 
+                                  df_interp_XC11, df_interp_YC11, df_interp_XCNINJ, df_interp_YCNINJ, df_interp_i, df_interp_j, df_interp_weights, df_interp_lon, df_interp_lat])
+    if step >= 2:
+        df_bin_id_a = xr.DataArray(MITprofs['prof_bin_id_a'], dims = ['iPROF'])
+        df_bin_id_a.name = 'prof_bin_id_a'
+        df_bin_id_a.encoding
+
+        df_bin_id_b = xr.DataArray(MITprofs['prof_bin_id_b'], dims = ['iPROF'])
+        df_bin_id_b.name = 'prof_bin_id_b'
+        df_bin_id_b.encoding
+        if step == 2:
+            output_DS = xr.merge([df_HHMMSS, df_YYYYMMDD, df_lat, df_lon, df_basin, df_date, df_depth, df_descr, df_point, df_S, df_S_flag, df_T, df_T_flag, 
+                                  df_interp_XC11, df_interp_YC11, df_interp_XCNINJ, df_interp_YCNINJ, df_interp_i, df_interp_j, df_interp_weights, df_interp_lon, df_interp_lat,
+                                  df_bin_id_a, df_bin_id_b])
+    if step >= 3:
+        df_Tclim = xr.DataArray(MITprofs['prof_Tclim'], dims = ['iPROF', 'iDEPTH'])
+        df_Tclim.name = 'prof_Tclim'
+        df_Tclim.encoding
+
+        df_Sclim = xr.DataArray(MITprofs['prof_Sclim'], dims = ['iPROF', 'iDEPTH'])
+        df_Sclim.name = 'prof_Sclim'
+        df_Sclim.encoding
+        if step == 3:
+            output_DS = xr.merge([df_HHMMSS, df_YYYYMMDD, df_lat, df_lon, df_basin, df_date, df_depth, df_descr, df_point, df_S, df_S_flag, df_T, df_T_flag, 
+                                  df_interp_XC11, df_interp_YC11, df_interp_XCNINJ, df_interp_YCNINJ, df_interp_i, df_interp_j, df_interp_weights, df_interp_lon, df_interp_lat,
+                                  df_bin_id_a, df_bin_id_b,
+                                  df_Tclim, df_Sclim])
+    if step >= 4:
+        df_Terr = xr.DataArray(MITprofs['prof_Terr'], dims = ['iPROF', 'iDEPTH'])
+        df_Terr.name = 'prof_Terr'
+        df_Terr.encoding
+
+        df_Serr = xr.DataArray(MITprofs['prof_Serr'], dims = ['iPROF', 'iDEPTH'])
+        df_Serr.name = 'prof_Serr'
+        df_Serr.encoding
+
+        df_Tweight = xr.DataArray(MITprofs['prof_Tweight'], dims = ['iPROF', 'iDEPTH'])
+        df_Tweight.name = 'prof_Tweight'
+        df_Tweight.encoding
+
+        df_Sweight = xr.DataArray(MITprofs['prof_Sweight'], dims = ['iPROF', 'iDEPTH'])
+        df_Sweight.name = 'prof_Sweight'
+        df_Sweight.encoding
+        if step == 4:
+            output_DS = xr.merge([df_HHMMSS, df_YYYYMMDD, df_lat, df_lon, df_basin, df_date, df_depth, df_descr, df_point, df_S, df_S_flag, df_T, df_T_flag, 
+                                  df_interp_XC11, df_interp_YC11, df_interp_XCNINJ, df_interp_YCNINJ, df_interp_i, df_interp_j, df_interp_weights, df_interp_lon, df_interp_lat,
+                                  df_bin_id_a, df_bin_id_b,
+                                  df_Tclim, df_Sclim,
+                                  df_Terr, df_Serr, df_Tweight, df_Sweight])
+    if step >= 5:
+        df_area_gamma = xr.DataArray(MITprofs['prof_area_gamma'], dims = ['iPROF'])
+        df_area_gamma.name = 'prof_area_gamma'
+        df_area_gamma.encoding
+        if step == 5 or step == 6:
+            output_DS = xr.merge([df_HHMMSS, df_YYYYMMDD, df_lat, df_lon, df_basin, df_date, df_depth, df_descr, df_point, df_S, df_S_flag, df_T, df_T_flag, 
+                                  df_interp_XC11, df_interp_YC11, df_interp_XCNINJ, df_interp_YCNINJ, df_interp_i, df_interp_j, df_interp_weights, df_interp_lon, df_interp_lat,
+                                  df_bin_id_a, df_bin_id_b,
+                                  df_Tclim, df_Sclim,
+                                  df_Terr, df_Serr, df_Tweight, df_Sweight,
+                                  df_area_gamma])
+    if step >= 7:
+        df_Tweight_code = xr.DataArray(MITprofs['prof_Tweight_code'], dims = ['iPROF', 'iDEPTH'])
+        df_Tweight_code.name = 'prof_Tweight_code'
+        df_Tweight_code.encoding
+
+        df_Sweight_code = xr.DataArray(MITprofs['prof_Sweight_code'], dims = ['iPROF', 'iDEPTH'])
+        df_Sweight_code.name = 'prof_Sweight_code'
+        df_Sweight_code.encoding
+        if step >=7 :
+            output_DS = xr.merge([df_HHMMSS, df_YYYYMMDD, df_lat, df_lon, df_basin, df_date, df_depth, df_descr, df_point, df_S, df_S_flag, df_T, df_T_flag, 
+                                  df_interp_XC11, df_interp_YC11, df_interp_XCNINJ, df_interp_YCNINJ, df_interp_i, df_interp_j, df_interp_weights, df_interp_lon, df_interp_lat,
+                                  df_bin_id_a, df_bin_id_b,
+                                  df_Tclim, df_Sclim,
+                                  df_Terr, df_Serr, df_Tweight, df_Sweight,
+                                  df_area_gamma,
+                                  df_Tweight_code, df_Sweight_code])
+ 
+    # Make encoding
+    encoding = {**make_encoding(output_DS)}
+
+    # Add global attributes
+    output_DS.attrs['description'] = 'test file'
+
+    # Save to netCDF
+    nc_path = os.path.join(dest_dir, "step_{}.nc".format(step))
+    output_DS.to_netcdf(nc_path, encoding= encoding)
+
+    
+def make_encoding(DS, fill_value = -9999):
+
+    dv_encoding = dict()
+    for dv in DS.data_vars:
+        dv_encoding[dv] =  {'zlib':True, \
+                        'complevel':5,\
+                        'shuffle':True,\
+                        '_FillValue':fill_value}
+    return dv_encoding
 
 """
 READS THE MATLAB GENERATED FILES
@@ -95,16 +292,13 @@ def MITprof_read(file, step):
         
         df_interp_YCNINJ = dataset.variables['prof_interp_YCNINJ'][:]
         MITprofs.update({"prof_interp_YCNINJ": df_interp_YCNINJ})
-    
-    # NOTE: added in step 2
+
     if step > 2:
         df_bin_a = dataset.variables['prof_bin_id_a'][:]
         MITprofs.update({"prof_bin_id_a": df_bin_a})
         df_bin_b = dataset.variables['prof_bin_id_b'][:]
         MITprofs.update({"prof_bin_id_b": df_bin_b})
-
-    # NOTE: added in step 3
-    
+ 
     if step > 3:
         df_prof_Tclim = dataset.variables['prof_Tclim'][:]
         MITprofs.update({"prof_Tclim": df_prof_Tclim})
@@ -144,33 +338,21 @@ def patchface3D(nx, ny, nz, array_in, direction):
     faces = [] 
 
     if direction == 3.5: # 3 but for 2D
-        # f1=array_in(1:nx, 1:nx*3 ,:);
         f1 = array_in[0:nx, 0:nx*3]
-        #f2=array_in(1:nx,  nx*3+1:nx*6 ,:);
         f2 = array_in[0:nx, nx*3:nx*6]
-        #f3=array_in(1:nx,  nx*6+1:nx*7 ,:);
         f3 = array_in[0:nx, nx*6:nx*7]
 
-        #temp=array_in(1:nx,nx* 7+1:nx*10,:);
         temp = array_in[0:nx, nx*7:nx*10]
-        #for k=1:nz; f4(:,:,k)=temp(:,:,k)'; end;
-        f4 = temp.T 
-        # temp=array_in(1:nx, nx*10+1:nx*13, :);	
+        f4 = temp.T 	
         temp = array_in[0:nx, nx*10:nx*13]
-        # for k=1:nz; f5(:,:,k)=temp(:,:,k)'; end;
         f5 = temp.T
 
-        #array_out=zeros(4*nx,4*nx,nz);
         array_out = np.zeros((4 * nx, 4 * nx))
 
         for k in range(nz):
-            # temp_out=zeros(4*nx,4*nx);
             temp_out = np.zeros((4 * nx, 4 * nx))
-            #temp_out(1:3*nx,:)=[f1(:,:,k)',f2(:,:,k)',flipud(f4(:,:,k)),flipud(f5(:,:,k))];
             temp_out[:3 * nx, :] = np.hstack((f1.T, f2.T, np.flipud(f4), np.flipud(f5)))
-            # temp_out(3*nx+1:4*nx,1:nx)=fliplr(f3(:,:,k));
             temp_out[3 * nx:, :nx] = np.fliplr(f3) 
-            #array_out(:,:,k)=temp_out';
             array_out[:, :] = temp_out.T
 
         faces.append(f1)
@@ -180,63 +362,40 @@ def patchface3D(nx, ny, nz, array_in, direction):
         faces.append(f5)
 
     if direction == 2.5:
-         # f1=array_in(:, 1:3 * nx, :);
         f1 = array_in[:, :3 * nx]
-        # f2=array_in(: ,3 * nx+1:6 * nx, :);
         f2 = array_in[:, 3 * nx:6 * nx]
-        # f3=array_in(:, 6 * nx+1:7 * nx,:);	% arctic: [nx nx]
         f3 = array_in[:, 6 * nx:7 * nx]   # arctic: [nx, nx]
 
         # Now the tricky part, because the grid is read in the wrong direction
 
-        #f4a=array_in( :, 7 * nx+1:3:10 * nx,:);
         f4a = array_in[:, 7 * nx:10 * nx:3]
-        # f4b=array_in(:, 7 * nx + 2:3:10 * nx + 1,:);
         f4b = array_in[:, 7 * nx + 1:10 * nx + 1:3]
-        # f4c=array_in(:, 7 * nx + 3:3:10 * nx + 1,:);
         f4c = array_in[:, 7 * nx + 2:10 * nx + 1:3]
-        #  f5a=array_in(:,10 * nx+1:3:13 * nx,:);
         f5a = array_in[:, 10 * nx:13 * nx:3]
-        #f5b=array_in(:,  10 * nx + 2:3:13 * nx +1,:)
         f5b = array_in[:, 10 * nx + 1:13 * nx + 1:3]
-        # f5c=array_in(:, 10 * nx + 3:3:13 * nx + 1,:);
         f5c = array_in[:, 10 * nx + 2:13 * nx + 1:3]
 
         f4 = np.zeros((3 * nx, nx))
-        #print("ny: {}, nx : {}, nx : {}".format(ny, 3 * nx, nz))
         f5 = np.zeros((3 * nx, nx))
 
         # this loop only runs once? NZ = 1 for first 2 calls of patchface
         for k in range(nz):
-            # temp = [        f4a(:, :, k)',  f4b(:, :, k)',  f4c(:, :, k)']; 
             temp = np.hstack((f4a[:, :].T, f4b[:, :].T, f4c[:, :].T))
-            # f4(:,:,k)=temp' #f4[:, :, k] = temp.T
             valid_mask = np.isfinite(temp.T)
             np.copyto(f4[:, :], temp.T, where=valid_mask)
 
             # print(np.isnan(temp.T).any()) # NaN values present in temp
-            # temp = [        f5a(:, :, k)',  f5b(:, :, k)',  f5c(:, :, k)']; 
             temp = np.hstack((f5a[:, :].T, f5b[:, :].T, f5c[:, :].T))
-            # f5(:,:,k)=temp'; # f5[:, :, k] = temp.T
             valid_mask = np.isfinite(temp.T)
             np.copyto(f5[:, :], temp.T, where=valid_mask)
 
-        # array_out=zeros(4*nx,4*nx,nz);
         array_out = np.zeros((4 * nx, 4 * nx))
 
         for k in range(nz):
-            # temp_out=zeros(4*nx,4*nx);
-            temp_out = np.zeros((4 * nx, 4 * nx))
-            # temp_out(1:3*nx,:)=[f1(:,:,k)',f2(:,:,k)',flipud(f4(:,:,k)),flipud(f5(:,:,k))];    
+            temp_out = np.zeros((4 * nx, 4 * nx)) 
             temp_out[:3 * nx] = np.hstack((f1[:, :].T, f2[:, :].T, np.flipud(f4[:, :]), np.flipud(f5[:, :])))
             
-            # temp_out(3*nx+1:4*nx,1:nx)=fliplr(f3(:,:,k));
-            #temp_var = np.fliplr(f3[:, :, k])
-            #valid_mask = np.isfinite(temp_var)
-            #np.copyto(temp_out[3 * nx:, :nx], temp_var, where = valid_mask)
             temp_out[3 * nx:, :nx] = np.fliplr(f3[:, :]) 
-
-            # array_out(:,:,k)=temp_out';
             array_out[:, :] = temp_out.T
 
         faces.append(f1)
@@ -247,64 +406,41 @@ def patchface3D(nx, ny, nz, array_in, direction):
 
     if (direction == 2 or direction == 3):
         if direction == 3:
-            print("uncoded")
+            raise Exception("PATCHFACE3D DIRECTION 3 UNCODED")
         if direction == 2:  # [2] from MITgcm compact array
-            # f1=array_in(:, 1:3 * nx, :);
+
             f1 = array_in[:, :3 * nx, :]
-            # f2=array_in(: ,3 * nx+1:6 * nx, :);
             f2 = array_in[:, 3 * nx:6 * nx, :]
-            # f3=array_in(:, 6 * nx+1:7 * nx,:);	% arctic: [nx nx]
             f3 = array_in[:, 6 * nx:7 * nx, :]   # arctic: [nx, nx]
 
             # Now the tricky part, because the grid is read in the wrong direction
-
-            #f4a=array_in( :, 7 * nx+1:3:10 * nx,:);
             f4a = array_in[:, 7 * nx:10 * nx:3, :]
-            # f4b=array_in(:, 7 * nx + 2:3:10 * nx + 1,:);
             f4b = array_in[:, 7 * nx + 1:10 * nx + 1:3, :]
-            # f4c=array_in(:, 7 * nx + 3:3:10 * nx + 1,:);
             f4c = array_in[:, 7 * nx + 2:10 * nx + 1:3, :]
-            #  f5a=array_in(:,10 * nx+1:3:13 * nx,:);
             f5a = array_in[:, 10 * nx:13 * nx:3, :]
-            #f5b=array_in(:,  10 * nx + 2:3:13 * nx +1,:)
             f5b = array_in[:, 10 * nx + 1:13 * nx + 1:3, :]
-            # f5c=array_in(:, 10 * nx + 3:3:13 * nx + 1,:);
             f5c = array_in[:, 10 * nx + 2:13 * nx + 1:3, :]
 
             f4 = np.zeros((3 * nx, nx, nz))
-            #print("ny: {}, nx : {}, nx : {}".format(ny, 3 * nx, nz))
             f5 = np.zeros((3 * nx, nx, nz))
 
             for k in range(nz):
-                # temp = [        f4a(:, :, k)',  f4b(:, :, k)',  f4c(:, :, k)']; 
                 temp = np.hstack((f4a[:, :, k].T, f4b[:, :, k].T, f4c[:, :, k].T))
-                # f4(:,:,k)=temp' #f4[:, :, k] = temp.T
                 valid_mask = np.isfinite(temp.T)
                 np.copyto(f4[:, :, k], temp.T, where=valid_mask)
 
-                # print(np.isnan(temp.T).any()) # NaN values present in temp
-                # temp = [        f5a(:, :, k)',  f5b(:, :, k)',  f5c(:, :, k)']; 
                 temp = np.hstack((f5a[:, :, k].T, f5b[:, :, k].T, f5c[:, :, k].T))
-                # f5(:,:,k)=temp'; # f5[:, :, k] = temp.T
                 valid_mask = np.isfinite(temp.T)
                 np.copyto(f5[:, :, k], temp.T, where=valid_mask)
 
-        # array_out=zeros(4*nx,4*nx,nz);
         array_out = np.zeros((4 * nx, 4 * nx, nz))
 
         for k in range(nz):
-            # temp_out=zeros(4*nx,4*nx);
             temp_out = np.zeros((4 * nx, 4 * nx))
-            # temp_out(1:3*nx,:)=[f1(:,:,k)',f2(:,:,k)',flipud(f4(:,:,k)),flipud(f5(:,:,k))];    
             temp_out[:3 * nx, :] = np.hstack((f1[:, :, k].T, f2[:, :, k].T, np.flipud(f4[:, :, k]), np.flipud(f5[:, :, k])))
             
-            # temp_out(3*nx+1:4*nx,1:nx)=fliplr(f3(:,:,k));
-            #temp_var = np.fliplr(f3[:, :, k])
-            #valid_mask = np.isfinite(temp_var)
-            #np.copyto(temp_out[3 * nx:, :nx], temp_var, where = valid_mask)
             temp_out[3 * nx:, :nx] = np.fliplr(f3[:, :, k]) 
 
-            # array_out(:,:,k)=temp_out';
             array_out[:, :, k] = temp_out.T
 
         faces.append(f1)
@@ -316,77 +452,49 @@ def patchface3D(nx, ny, nz, array_in, direction):
     # NOTE: Same as 0 but for 2D arrays
     if direction == 0.5: 
         nx=nx//4
-        # f1=array_in(1:nx,1:3*nx,:)	
         f1 = array_in[:nx, :3 * nx, :]
-        f1 = np.squeeze(f1)
-        #f2=array_in(nx+1:2*nx,1:3*nx,:)		
+        f1 = np.squeeze(f1)	
         f2 = array_in[nx:2 * nx, :3 * nx, :]
         f2 = np.squeeze(f2)
-        #temp=array_in(1:nx,3*nx+1:4*nx,:)
         temp = array_in[:nx, 3 * nx:4 * nx, :]
         
-        # for k=1:nz; f3(:,:,k)=fliplr(temp(:,:,k)');
         f3 = np.array([np.fliplr(temp[:, :, k].T) for k in range(temp.shape[2])])
         # Remove the singleton dimension
         f3 = np.squeeze(f3)
 
-        #temp=array_in(2 * nx+1:3*nx,1:3*nx,:)
         temp = array_in[2 * nx:3 * nx, :3 * nx, :]
-        #for k=1:nz; f4(:,:,k)=temp(:,:,k)'
         f4 = np.array([temp[:, :, k].T for k in range(temp.shape[2])])
         f4 = np.squeeze(f4)
 
-        #temp=array_in(3*nx+1:4*nx,1:3*nx,:)
         temp = array_in[3 * nx:4 * nx, :3 * nx, :]
-        #for k=1:nz; f5(:,:,k)=temp(:,:,k)';
         f5 = np.array([temp[:, :, k].T for k in range(temp.shape[2])])
         f5 = np.squeeze(f5)
 
         f4a = f4[:nx, :]
-        #f4b=f4(nx+1:2*nx,:,:);
         f4b = f4[nx:2*nx, :]	
-        #f4c=f4(2*nx+1:3*nx,:,:);
         f4c = f4[2*nx:3*nx, :]
 
-        #f5a=f5(1:nx,:,:);	
         f5a = f5[:nx, :]
-        #f5b=f5(nx+1:2*nx,:,:);	
         f5b = f5[nx:2*nx, :]
-        #f5c=f5(2*nx+1:3*nx,:,:);
         f5c = f5[2*nx:3*nx, :]
         
-        # array_out=zeros(nx,13*nx,nz);
         array_out = np.zeros((nx,13*nx))
 
-        #for k=1:nz
         for k in range(nz):
-            # f4p=zeros(nx,3*nx);
             f4p = np.zeros((nx, 3*nx))
-            # f4p(:, 3:3:end,k)=flipud(f4a(:,:,k));
             f4p[:, 2::3] = np.flipud(f4a[:, :])
-            # f4p(:, 2:3:end,k)=flipud(f4b(:,:,k));
             f4p[:, 1::3] = np.flipud(f4b[:, :])
-            # f4p(:, 1:3:end,k)=flipud(f4c(:,:,k));
             f4p[:, 0::3] = np.flipud(f4c[:, :])
 
-            # f5p=zeros(nx,3*nx);
             f5p = np.zeros((nx, 3*nx))
-            # f5p(:,3:3:end,k)=flipud(f5a(:,:,k));
             f5p[:, 2::3] = np.flipud(f5a[:, :])
-            # f5p(:,2:3:end,k)=flipud(f5b(:,:,k));
             f5p[:, 1::3] = np.flipud(f5b[:, :])
-            # f5p(:,1:3:end,k)=flipud(f5c(:,:,k));
             f5p[:, 0::3] = np.flipud(f5c[:, :])
 
-            # array_out(1:nx, 1: 3*nx,k) = f1(:,:,k);
             array_out[0:nx, 0:3*nx] = f1[:, :]
-            # array_out(1:nx, 3*nx+1: 6*nx,k) = f2(:,:,k);
             array_out[0:nx, 3*nx:6*nx] = f2[:, :]
-            # array_out(1:nx, 6*nx+1: 7*nx,k) = f3(:,:,k);
             array_out[0:nx, 6*nx:7*nx] = f3[:, :]
-            # array_out(1:nx, 7*nx+1:10*nx,k) = f4p;
             array_out[0:nx, 7*nx:10*nx] = f4p
-            # array_out(1:nx,10*nx+1:13*nx,k) = f5p;
             array_out[0:nx, 10*nx:13*nx] = f5p
 
         faces.append(f1)	
@@ -421,56 +529,33 @@ def patchface3D(nx, ny, nz, array_in, direction):
             f5 = np.array([temp[:, :, k].T for k in range(temp.shape[2])])
 
         if direction == 1:
-            print("uncoded")
+            raise Exception("UNCODED")
 
         f4a = f4[:nx, :, :]
-        #f4b=f4(nx+1:2*nx,:,:);
         f4b = f4[nx:2*nx, :, :]	
-        #f4c=f4(2*nx+1:3*nx,:,:);
         f4c = f4[2*nx:3*nx, :, :]
-        #f5a=f5(1:nx,:,:);	
         f5a = f5[:nx, :, :]
-        #f5b=f5(nx+1:2*nx,:,:);	
         f5b = f5[nx:2*nx, :, :]
-        #f5c=f5(2*nx+1:3*nx,:,:);
         f5c = f5[2*nx:3*nx, :, :]
         
-        # array_out=zeros(nx,13*nx,nz);
         array_out = np.zeros((nx,13*nx, nz))
 
-        #for k=1:nz
         for k in range(nz):
-            # f4p=zeros(nx,3*nx);
             f4p = np.zeros((nx, 3*nx))
-            # f4p(:,3:3:end,k)=flipud(f4a(:,:,k));
             f4p[:, 2:3:-1, k] = f4a[:, :, k]
-            # f4p(:,2:3:end,k)=flipud(f4b(:,:,k));
             f4p[:, 1:3:-1, k] = f4b[:, :, k]
-            # f4p(:,1:3:end,k)=flipud(f4c(:,:,k));
             f4p[:, 0:3:-1, k] = f4c[:, :, k]
 
-            # f5p=zeros(nx,3*nx);
             f5p = np.zeros((nx, 3*nx))
-            # f5p(:,3:3:end,k)=flipud(f5a(:,:,k));
             f5p[:, 2:3:-1, k] = f5a[:, :, k]
-            # f5p(:,2:3:end,k)=flipud(f5b(:,:,k));
             f5p[:, 1:3:-1, k] = f5b[:, :, k]
-            # f5p(:,1:3:end,k)=flipud(f5c(:,:,k));
             f5p[:, 0:3:-1, k] = f5c[:, :, k]
 
-            # array_out(1:nx,      1: 3*nx,k) = f1(:,:,k);
             array_out[0:nx, 0:3*nx, k] = f1[:, :, k]
-            # array_out(1:nx, 3*nx+1: 6*nx,k) = f2(:,:,k);
             array_out[0:nx, 3*nx:6*nx, k] = f2[:, :, k]
-            # array_out(1:nx, 6*nx+1: 7*nx,k) = f3(:,:,k);
             array_out[0:nx, 6*nx:7*nx, k] = np.fliplr(f3[:, :, k])
-            # array_out(1:nx, 7*nx+1:10*nx,k) = f4p;
             array_out[0:nx, 7*nx:10*nx, k] = f4p
-            # array_out(1:nx,10*nx+1:13*nx,k) = f5p;
             array_out[0:nx, 10*nx:13*nx, k] = f5p
-
-        print(array_out.shape)
-        raise Exception("double check this, we coded 0.5 for 2D, this handles 3D arrays")
 
     return array_out, faces
 
@@ -489,7 +574,6 @@ def make_llc90_cell_centers():
 
     return delR, z_top, z_bot, z_cen
 
-
 def make_llc270_cell_centers():
 
     delR = np.array([10.00, 10.00, 10.00, 10.00, 10.00, 10.00, 10.00, 10.01,
@@ -505,157 +589,224 @@ def make_llc270_cell_centers():
 
     return delR, z_top, z_bot, z_cen
 
-def load_llc270_grid(llc270_grid_dir):
+def load_llc270_grid(llc270_grid_dir, step):
 
+    deg2rad = np.pi/180.0
     llcN = 270
     siz = [llcN, 13*llcN, 1]
-    typ = 1
-    prec ='float32'  # real*4 corresponds to float32
-    skip = 0 
-    mform = '>f4' # 'ieee-be' corresponds to f4
+    mform = '>f4' 
 
-    # 1
+    if step == 1:
+        siz = [llcN, 13*llcN, 1]
+        bathy_270_fname = os.path.join(llc270_grid_dir, 'bathy_llc270')
+        with open(bathy_270_fname, 'rb') as fid:
+            bathy_270 = np.fromfile(fid, dtype=mform)
+            bathy_270 = bathy_270.reshape((siz[0], np.prod(siz[1:])), order='F')
+            bathy_270 = bathy_270.reshape((siz[0], siz[1], siz[2]))
+
+        lon_270_path = os.path.join(llc270_grid_dir, 'XC.data')
+        lat_270_path = os.path.join(llc270_grid_dir, 'YC.data')
+        with open(lon_270_path, 'rb') as fid:
+            lon_270 = np.fromfile(fid, dtype=mform)
+            lon_270 = lon_270.reshape((siz[0], np.prod(siz[1:])), order='F')
+            lon_270 = lon_270.reshape((siz[0], siz[1], siz[2]))
+        with open(lat_270_path, 'rb') as fid:
+            lat_270 = np.fromfile(fid, dtype=mform)
+            lat_270 = lat_270.reshape((siz[0], np.prod(siz[1:])), order='F')
+            lat_270 = lat_270.reshape((siz[0], siz[1], siz[2]))
+        
+        blank_270 = np.full_like(bathy_270, np.nan)
+
+        siz = [llcN, 13*llcN, 50]
+        hFacC_270_path = os.path.join(llc270_grid_dir, 'hFacC.data')
+        with open(hFacC_270_path, 'rb') as fid:
+            hFacC_270 = np.fromfile(fid, dtype=mform)
+            hFacC_270 = hFacC_270.reshape((siz[0], np.prod(siz[1:])), order='F')
+            hFacC_270 = hFacC_270.reshape((siz[0], siz[1], siz[2]), order='F')
+
+        wet_ins_270_k = []
+        for k in range(0,50):
+            tmp = hFacC_270[:,:,k].flatten(order = 'F')
+            wet_ins_270_k.append(np.where(tmp > 0)[0])
+
+        bad_ins_270 = np.where(np.logical_and(lat_270 == 0, lon_270 == 0, bathy_270 == 0).flatten(order = 'F'))[0]
+        lon_270[np.unravel_index(bad_ins_270, lon_270.shape, order = 'F')] = np.NaN
+        lat_270[np.unravel_index(bad_ins_270, lat_270.shape, order = 'F')] = np.NaN
+
+        return lon_270, lat_270, blank_270, wet_ins_270_k 
+    
+    if step == 2 or step == 4:
+        siz = [llcN, 13*llcN, 1]
+        bathy_270_fname = os.path.join(llc270_grid_dir, 'bathy_llc270')
+        with open(bathy_270_fname, 'rb') as fid:
+            bathy_270 = np.fromfile(fid, dtype=mform)
+            bathy_270 = bathy_270.reshape((siz[0], np.prod(siz[1:])), order='F')
+            bathy_270 = bathy_270.reshape((siz[0], siz[1], siz[2]))
+
+        lon_270_path = os.path.join(llc270_grid_dir, 'XC.data')
+        lat_270_path = os.path.join(llc270_grid_dir, 'YC.data')
+        with open(lon_270_path, 'rb') as fid:
+            lon_270 = np.fromfile(fid, dtype=mform)
+            lon_270 = lon_270.reshape((siz[0], np.prod(siz[1:])), order='F')
+            lon_270 = lon_270.reshape((siz[0], siz[1], siz[2]))
+        with open(lat_270_path, 'rb') as fid:
+            lat_270 = np.fromfile(fid, dtype=mform)
+            lat_270 = lat_270.reshape((siz[0], np.prod(siz[1:])), order='F')
+            lat_270 = lat_270.reshape((siz[0], siz[1], siz[2]))
+
+        X_270, Y_270, Z_270 = sph2cart(lon_270*deg2rad, lat_270*deg2rad, 1)
+        bad_ins_270 = np.where(np.logical_and(lat_270 == 0, lon_270 == 0, bathy_270 == 0).flatten(order = 'F'))[0]
+
+        X_270[np.unravel_index(bad_ins_270, X_270.shape, order = 'F')] = np.NaN
+        Y_270[np.unravel_index(bad_ins_270, X_270.shape, order = 'F')] = np.NaN
+        Z_270[np.unravel_index(bad_ins_270, X_270.shape, order = 'F')] = np.NaN
+        lon_270[np.unravel_index(bad_ins_270, lon_270.shape, order = 'F')] = np.NaN
+        lat_270[np.unravel_index(bad_ins_270, lat_270.shape, order = 'F')] = np.NaN
+
+        AI_270 = np.arange(lon_270.size, dtype=np.float64).reshape(lon_270.shape, order = 'F')
+        good_ins_270 = np.setdiff1d(AI_270.flatten(order = 'F').T, bad_ins_270.flatten(order = 'F'))
+        good_ins_270 = good_ins_270.astype(int)
+
+        if step == 2:
+            return lon_270, lat_270, X_270, Y_270, Z_270, bathy_270, good_ins_270
+        
+        if step == 4:
+            siz = [llcN, 13*llcN, 50]
+            hFacC_270_path = os.path.join(llc270_grid_dir, 'hFacC.data')
+            with open(hFacC_270_path, 'rb') as fid:
+                hFacC_270 = np.fromfile(fid, dtype=mform)
+                hFacC_270 = hFacC_270.reshape((siz[0], np.prod(siz[1:])), order='F')
+                hFacC_270 = hFacC_270.reshape((siz[0], siz[1], siz[2]), order='F')
+
+            wet_ins_270_k = []
+            for k in range(0,50):
+                tmp = hFacC_270[:,:,k].flatten(order = 'F')
+                wet_ins_270_k.append(np.where(tmp > 0)[0])
+
+            AI_270[np.unravel_index(bad_ins_270, AI_270.shape, order = 'F')] = np.NaN
+            delR_270, z_top_270, z_bot_270, z_cen_270 = make_llc270_cell_centers()
+
+            return wet_ins_270_k, X_270, Y_270, Z_270, AI_270, z_cen_270, lat_270, lon_270
+
+    if step == 5:
+
+        RAC_270_path = os.path.join(llc270_grid_dir, 'RAC.data')
+        with open(RAC_270_path, 'rb') as fid:
+            RAC_270 = np.fromfile(fid, dtype=mform)
+            RAC_270 = RAC_270.reshape((siz[0], np.prod(siz[1:])), order='F')
+            RAC_270 = RAC_270.reshape((siz[0], siz[1], siz[2]))
+
+        RAC_270_pf, faces = patchface3D(llcN, llcN*13, 1, RAC_270 , 2)
+
+        return RAC_270_pf
+    
+    raise Exception("Uncoded step")
+    """
+    The following code are all files loaded into the orginal matlab script,
+    not all are used
+    """
     bathy_270_fname = os.path.join(llc270_grid_dir, 'bathy_llc270')
-    #bathy_270 = readbin(bathy_270_fname,[llcN 13*llcN 1],1,'real*4',0,'ieee-be')
     with open(bathy_270_fname, 'rb') as fid:
         bathy_270 = np.fromfile(fid, dtype=mform)
         # order F: populates column first instead of default Python via row
         bathy_270 = bathy_270.reshape((siz[0], np.prod(siz[1:])), order='F')
         bathy_270 = bathy_270.reshape((siz[0], siz[1], siz[2]))
 
-    #2
     lon_270_path = os.path.join(llc270_grid_dir, 'XC.data')
     lat_270_path = os.path.join(llc270_grid_dir, 'YC.data')
-    #lon_270 = readbin('XC.data',[llcN 13*llcN 1],1,'real*4',0,'ieee-be');
     with open(lon_270_path, 'rb') as fid:
         lon_270 = np.fromfile(fid, dtype=mform)
-        # order F: populates column first instead of default Python via row
         lon_270 = lon_270.reshape((siz[0], np.prod(siz[1:])), order='F')
         lon_270 = lon_270.reshape((siz[0], siz[1], siz[2]))
-    # lat_270 = readbin('YC.data',[llcN 13*llcN 1],1,'real*4',0,'ieee-be')
     with open(lat_270_path, 'rb') as fid:
         lat_270 = np.fromfile(fid, dtype=mform)
-        # order F: populates column first instead of default Python via row
         lat_270 = lat_270.reshape((siz[0], np.prod(siz[1:])), order='F')
         lat_270 = lat_270.reshape((siz[0], siz[1], siz[2]))
     
-    #3 did ^ instead of this line
-    #[lat_270, lon_270] = load_grid_fields_from_tile_files(pwd, 270);
-
-    #4
     XG_270_path = os.path.join(llc270_grid_dir, 'XG.data')
     YG_270_path = os.path.join(llc270_grid_dir, 'YG.data')
-    #XG_270 = readbin('XG.data',[llcN 13*llcN 1],1,'real*4',0,'ieee-be');
     with open(XG_270_path, 'rb') as fid:
         XG_270 = np.fromfile(fid, dtype=mform)
         XG_270 = XG_270.reshape((siz[0], np.prod(siz[1:])), order='F')
         XG_270 = XG_270.reshape((siz[0], siz[1], siz[2]))
-    #YG_270 = readbin('YG.data',[llcN 13*llcN 1],1,'real*4',0,'ieee-be');
     with open(YG_270_path, 'rb') as fid:
         YG_270 = np.fromfile(fid, dtype=mform)
         YG_270 = YG_270.reshape((siz[0], np.prod(siz[1:])), order='F')
         YG_270 = YG_270.reshape((siz[0], siz[1], siz[2]))
 
-    #5
     RAC_270_path = os.path.join(llc270_grid_dir, 'RAC.data')
-    #RAC_270 = readbin('RAC.data',[llcN 13*llcN 1],1,'real*4',0,'ieee-be');
     with open(RAC_270_path, 'rb') as fid:
         RAC_270 = np.fromfile(fid, dtype=mform)
         RAC_270 = RAC_270.reshape((siz[0], np.prod(siz[1:])), order='F')
         RAC_270 = RAC_270.reshape((siz[0], siz[1], siz[2]))
 
-    #6
     DXG_270_path = os.path.join(llc270_grid_dir, 'DXG.data')
-    #DXG_270 = readbin('DXG.data',[llcN 13*llcN 1],1,'real*4',0,'ieee-be');
     with open(DXG_270_path, 'rb') as fid:
         DXG_270 = np.fromfile(fid, dtype=mform)
         DXG_270 = DXG_270.reshape((siz[0], np.prod(siz[1:])), order='F')
         DXG_270 = DXG_270.reshape((siz[0], siz[1], siz[2]))
     DYG_270_path = os.path.join(llc270_grid_dir, 'DYG.data')
-    #DYG_270 = readbin('DYG.data',[llcN 13*llcN 1],1,'real*4',0,'ieee-be');
     with open(DYG_270_path, 'rb') as fid:
         DYG_270 = np.fromfile(fid, dtype=mform)
         DYG_270 = DYG_270.reshape((siz[0], np.prod(siz[1:])), order='F')
         DYG_270 = DYG_270.reshape((siz[0], siz[1], siz[2]))
     
-    #7
     DXC_270_path = os.path.join(llc270_grid_dir, 'DXC.data')
     DYC_270_path = os.path.join(llc270_grid_dir, 'DYC.data')
-    #DXC_270 = readbin('DXC.data',[llcN 13*llcN 1],1,'real*4',0,'ieee-be');
     with open(DXC_270_path, 'rb') as fid:
         DXC_270 = np.fromfile(fid, dtype=mform)
         DXC_270 = DXC_270.reshape((siz[0], np.prod(siz[1:])), order='F')
         DXC_270 = DXC_270.reshape((siz[0], siz[1], siz[2]))
-    #DYC_270 = readbin('DYC.data',[llcN 13*llcN 1],1,'real*4',0,'ieee-be');
     with open(DYC_270_path, 'rb') as fid:
         DYC_270 = np.fromfile(fid, dtype=mform)
         DYC_270 = DYC_270.reshape((siz[0], np.prod(siz[1:])), order='F')
         DYC_270 = DYC_270.reshape((siz[0], siz[1], siz[2]))
 
-    #8
     Depth_270_path = os.path.join(llc270_grid_dir, 'Depth.data')
-    #Depth_270 = readbin('Depth.data',[llcN 13*llcN 1],1,'real*4',0,'ieee-be');
     with open(Depth_270_path, 'rb') as fid:
         Depth_270 = np.fromfile(fid, dtype=mform)
         Depth_270 = Depth_270.reshape((siz[0], np.prod(siz[1:])), order='F')
         Depth_270 = Depth_270.reshape((siz[0], siz[1], siz[2]))
 
-    #9
     siz = [llcN, 13*llcN, 50]
     hFacC_270_path = os.path.join(llc270_grid_dir, 'hFacC.data')
     hFacW_270_path = os.path.join(llc270_grid_dir, 'hFacW.data')
     hFacS_270_path = os.path.join(llc270_grid_dir, 'hFacS.data')
-    #hFacC_270 = readbin('hFacC.data',[llcN 13*llcN 50],1,'real*4',0,'ieee-be');
     with open(hFacC_270_path, 'rb') as fid:
         hFacC_270 = np.fromfile(fid, dtype=mform)
         hFacC_270 = hFacC_270.reshape((siz[0], np.prod(siz[1:])), order='F')
         hFacC_270 = hFacC_270.reshape((siz[0], siz[1], siz[2]), order='F')
-    #hFacW_270 = readbin('hFacW.data',[llcN 13*llcN 50],1,'real*4',0,'ieee-be');
     with open(hFacW_270_path, 'rb') as fid:
         hFacW_270 = np.fromfile(fid, dtype=mform)
         hFacW_270 = hFacW_270.reshape((siz[0], np.prod(siz[1:])), order='F')
         hFacW_270 = hFacW_270.reshape((siz[0], siz[1], siz[2]), order='F')
-    #hFacS_270 = readbin('hFacS.data',[llcN 13*llcN 50],1,'real*4',0,'ieee-be');
     with open(hFacS_270_path, 'rb') as fid:
         hFacS_270 = np.fromfile(fid, dtype=mform)
         hFacS_270 = hFacS_270.reshape((siz[0], np.prod(siz[1:])), order='F')
         hFacS_270 = hFacS_270.reshape((siz[0], siz[1], siz[2]), order='F')
     
-    # 10
     siz = [llcN, 13*llcN, 1]
     basin_mask_270_path = os.path.join(llc270_grid_dir, 'basin_masks_eccollc_llc270.bin')
-    #basin_mask_270 = readbin('basin_masks_eccollc_llc270.bin',[llcN 13*llcN 1],1,'real*4',0,'ieee-be');
     with open(basin_mask_270_path, 'rb') as fid:
         basin_mask_270 = np.fromfile(fid, dtype=mform)
         basin_mask_270 = basin_mask_270.reshape((siz[0], np.prod(siz[1:])), order='F')
         basin_mask_270 = basin_mask_270.reshape((siz[0], siz[1], siz[2]))
 
-    # 11
     deg2rad = np.pi/180.0
 
-    # 12
     # this is how we find bogus points in the compact grid.
-    #bad_ins_270 = find(lat_270 ==0 & lon_270 == 0 & bathy_270 == 0);
     bad_ins_270 = np.where(np.logical_and(lat_270 == 0, lon_270 == 0, bathy_270 == 0).flatten(order = 'F'))[0]
-    #AI_270 = 1:length(lon_270(:));
-    #AI_270 = reshape(AI_270, size(lon_270));
     AI_270 = np.arange(lon_270.size, dtype=np.float64).reshape(lon_270.shape, order = 'F')
 
-    # 13
-    #good_ins_270 = setdiff(AI_270(:)', bad_ins_270(:));
     good_ins_270 = np.setdiff1d(AI_270.flatten(order = 'F').T, bad_ins_270.flatten(order = 'F'))
     good_ins_270 = good_ins_270.astype(int)
     
-    # 14
-    #[X_270, Y_270, Z_270] = sph2cart(lon_270*deg2rad, lat_270*deg2rad, 1);
     X_270, Y_270, Z_270 = sph2cart(lon_270*deg2rad, lat_270*deg2rad, 1)
 
-    # 15
     X_270[np.unravel_index(bad_ins_270, X_270.shape, order = 'F')] = np.NaN
     Y_270[np.unravel_index(bad_ins_270, X_270.shape, order = 'F')] = np.NaN
     Z_270[np.unravel_index(bad_ins_270, X_270.shape, order = 'F')] = np.NaN
     AI_270[np.unravel_index(bad_ins_270, AI_270.shape, order = 'F')] = np.NaN
-  
     lon_270[np.unravel_index(bad_ins_270, lon_270.shape, order = 'F')] = np.NaN
     lat_270[np.unravel_index(bad_ins_270, lat_270.shape, order = 'F')] = np.NaN
     
@@ -666,31 +817,17 @@ def load_llc270_grid(llc270_grid_dir):
         tmp = hFacC_270[:,:,k].flatten(order = 'F')
         dry_ins_270_k.append(np.where(tmp == 0)[0])
         wet_ins_270_k.append(np.where(tmp > 0)[0])
-    """
-    for k = 1:50
-        tmp = hFacC_270(:,:,k);
-        dry_ins_270_k{k} = find(tmp == 0);
-        wet_ins_270_k{k} = find(tmp > 0);
-    """
-    # 18
-    # hf0_270 = hFacC_270(:,:,1);
+
     hf0_270 = hFacC_270[:,:,0]
-    # tmp = bathy_270(wet_ins_270_k{1});
     bathy_270_flat = bathy_270.flatten(order = 'F')
     tmp = bathy_270_flat[wet_ins_270_k[0]]
 
-    # 19
-    #blank_270 = bathy_270.*NaN;
     blank_270 = np.full_like(bathy_270, np.nan)
 
-    # 20
-    #hf0_270_pf = patchface3D(llcN, llcN*13, 1, hFacC_270(:,:,1), 2);
     hf0_270_pf, faces = patchface3D(llcN, llcN*13, 1, hFacC_270[:,:,1], 2.5)
-    #bathy_270_pf = patchface3D(llcN, llcN*13, 1, bathy_270, 2);
     bathy_270_pf, faces = patchface3D(llcN, llcN*13, 1, bathy_270, 2)
     RAC_270_pf, faces = patchface3D(llcN, llcN*13, 1, RAC_270 , 2)
     
-    # 22
     delR_270, z_top_270, z_bot_270, z_cen_270 = make_llc270_cell_centers()
     
     return lon_270, lat_270, blank_270, wet_ins_270_k, X_270, Y_270, Z_270, bathy_270, good_ins_270, RAC_270_pf
@@ -787,7 +924,6 @@ def load_llc90_grid(grootdir, step):
         lon_90_64 = lon_90.astype(np.float64)
         lat_90_64 = lat_90.astype(np.float64)
 
-        # USED
         X_90, Y_90, Z_90 = sph2cart(lon_90_64*deg2rad, lat_90_64*deg2rad, 1.0)
      
         AI_90 = np.arange(0, lon_90.size)
@@ -807,7 +943,7 @@ def load_llc90_grid(grootdir, step):
         
         delR_90, z_top_90, z_bot_90, z_cen_90 = make_llc90_cell_centers()
 
-        return wet_ins_90_k, X_90, Y_90, Z_90, z_top_90, z_bot_90, hFacC_90, AI_90, z_cen_90
+        return wet_ins_90_k, X_90, Y_90, Z_90, AI_90, z_cen_90, lat_90, lon_90
 
     if step == 5:
         llcN = 90 # in matlab
@@ -826,6 +962,7 @@ def load_llc90_grid(grootdir, step):
         return RAC_90_pf
     
     raise Exception("Uncoded step")
+
     """
     This code is all matlab files that were loaded into the original function. 
     The ones commented out are unused.
@@ -1006,3 +1143,67 @@ def load_llc90_grid(grootdir, step):
     # landmask_90_pf, faces = patchface3D(llcN, llcN*13, 1, temp, 2.5)
 
     return lon_90, lat_90, blank_90, wet_ins_90_k, RAC_90_pf, bathy_90, good_ins_90, X_90, Y_90, Z_90, z_top_90, z_bot_90, hFacC_90, AI_90, z_cen_90 
+
+def intrep_check(xyz, AI, X, Y, Z, lat_vals, lon_vals, step, **kwargs):
+    
+    good_clim_ins = kwargs.get('good_clim', None)
+    
+    deg2rad = np.pi/180.0
+    for i in range(1,5):
+        if i == 1:
+            test_lat = 56
+            test_lon = -40
+        if i == 2:
+            test_lat = 60
+            test_lon = 10
+        if i == 3:
+            if step == 4:
+                test_lat = -63.9420
+                test_lon = -2.0790
+            else:
+                test_lat = -60
+                test_lon = -120
+        if i == 4:
+            test_lat = -69
+            test_lon = 60
+
+        test_x, test_y, test_z = sph2cart(test_lon*deg2rad, test_lat*deg2rad, 1)
+        test_ind = int(griddata(xyz, AI, np.asarray([test_x, test_y, test_z]), 'nearest'))
+        
+        if step == 2:
+            
+            print("i = {} | test_ind = {} | lat = {} | lon = {}".format(i, test_ind, test_lat, test_lon))
+            print("{} {} {} | {} {} {}".format(X[test_ind], Y[test_ind], Z[test_ind], test_x, test_y, test_z))
+            print("{} {} | {} {}".format(lat_vals[test_ind], lon_vals[test_ind], test_lat, test_lon))
+
+            if abs(X[test_ind] - test_x) > 5 or abs(Y[test_ind] - test_y) > 5 or abs(Z[test_ind] - test_z) > 5:
+                raise Exception("Step {} failed check, interp XYZ coordinate difference too big".format(step))
+            if abs(lat_vals[test_ind] - test_lat) > 5 or abs(lon_vals[test_ind] - test_lon) > 5:
+                raise Exception("Step {} failed check, interp lon/lat coordinate difference too big".format(step))
+        
+        if step == 3:
+            print("{} {} {} | {} {} {}".format(X[test_ind], Y[test_ind], Z[test_ind], test_x, test_y, test_z))
+            print("{} {} | {} {}".format(lat_vals[good_clim_ins[test_ind]], lon_vals[good_clim_ins[test_ind]], test_lat, test_lon))
+
+            if abs(X[test_ind] - test_x) > 5 or abs(Y[test_ind] - test_y) > 5 or abs(Z[test_ind] - test_z) > 5:
+                raise Exception("Step {} failed check, interp XYZ coordinate difference too big".format(step))
+            if abs(lat_vals[good_clim_ins[test_ind]] - test_lat) > 5 or abs(lon_vals[good_clim_ins[test_ind]] - test_lon) > 5:
+                raise Exception("Step {} failed check, interp lon/lat coordinate difference too big".format(step))
+
+        if step == 4:
+
+            print('original (line 1) vs closest (line 2) x,y,z')
+            print("{} {} {}".format(X.flatten(order = 'F')[test_ind], Y.flatten(order = 'F')[test_ind], Z.flatten(order = 'F')[test_ind]))
+            print("{} {} {}".format(test_x, test_y, test_z))
+            
+            print('original (line 1) vs closest (line 2) lat lon')
+            print("{} {}".format(test_lat, test_lon))
+            print("{} {}".format(lat_vals.flatten(order = 'F')[test_ind], lon_vals.flatten(order = 'F')[test_ind]))
+
+            if abs(X.flatten(order = 'F')[test_ind] - test_x) > 5 or abs(Y.flatten(order = 'F')[test_ind] - test_y) > 5 or abs(Z.flatten(order = 'F')[test_ind] - test_z) > 5:
+                raise Exception("Step {} failed check, interp XYZ coordinate difference too big".format(step))
+            if abs(lat_vals.flatten(order = 'F')[test_ind] - test_lat) > 5 or abs(lon_vals.flatten(order = 'F')[test_ind] - test_lon) > 5:
+                raise Exception("Step {} failed check, interp lon/lat coordinate difference too big".format(step))
+        
+        print("=================")    
+

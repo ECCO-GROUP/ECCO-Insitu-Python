@@ -1,13 +1,10 @@
-import copy
+import argparse
 import glob
 import os
 import numpy as np
 import numpy.ma as ma
-import datetime as dt
-from step07 import count_profs_with_nonzero_weights
-from step08 import extract_profile_subset_from_MITprof, update_remove_zero_T_S_weighted_profiles_from_MITprof
+from step08 import update_remove_zero_T_S_weighted_profiles_from_MITprof
 from tools import MITprof_read, sph2cart
-import scipy.io as sio
 
 def distmat(xy, varargin):
 
@@ -54,17 +51,21 @@ def distmat(xy, varargin):
 
     return dmat, opt
 
-def update_decimate_profiles_subdaily_to_once_daily(run_code, MITprofs, grid_dir):
+def update_decimate_profiles_subdaily_to_once_daily(run_code, MITprofs):
     """
-    % This script decimates profiles with subdaily sampling at the same
-    % location to once-daily sampling.
+    This script decimates profiles with subdaily sampling at the same
+    location to once-daily sampling.
+
+    Input Parameters:
+        run_code: 
+        20181218_1
+        20181218_2
+        
+        MITprof: a single MITprof object
+
+    Output:
+        Operates on MITprofs directly 
     """
-
-    # SET INPUT PARAMETERS
-    fillVal=-9999
-    checkVal=-9000
-
-    debug_code=0
 
     # distance_tolerance: radius within which profiles are considered to be at
     # the same location [in meters]
@@ -75,18 +76,16 @@ def update_decimate_profiles_subdaily_to_once_daily(run_code, MITprofs, grid_dir
     closest_time = 120000 # HHMMSS
 
     if run_code == '20181218_1':
-        save_output_to_disk = 0
         distance_tolerance = 5e3 # meters
         closest_time = 120000  # noon
         method = 0
     if run_code == '20181218_2':
-        save_output_to_disk = 0
         distance_tolerance = 5e3 # meters
         closest_time = 120000  # noon
         method = 1
 
-    num_profs = len(MITprofs['prof_YYYYMMDD'])
-        
+    deg2rad = np.pi/180    
+
     if method == 0:
         unique_prof_lat = []
         unique_prof_lon = [] 
@@ -94,7 +93,7 @@ def update_decimate_profiles_subdaily_to_once_daily(run_code, MITprofs, grid_dir
 
         profs_to_decimate = np.ones(MITprofs['prof_YYYYMMDD'].shape)
 
-        deg2rad = np.pi/180
+        
         X, Y, Z = sph2cart(MITprofs['prof_lon']*deg2rad, MITprofs['prof_lat']*deg2rad, 6357000)
                  
         while(np.sum(profs_to_decimate)) > 0:
@@ -106,8 +105,7 @@ def update_decimate_profiles_subdaily_to_once_daily(run_code, MITprofs, grid_dir
             if num_profs_left > 0:
 
                 prof_num = prof_num + 1
-                ones_n = np.ones(num_profs_left)
-           
+
                 # consider the next on the list
                 cur_i = np.where(profs_to_decimate == 1)[0][0]
 
@@ -132,7 +130,6 @@ def update_decimate_profiles_subdaily_to_once_daily(run_code, MITprofs, grid_dir
                 # the indexes of the points that are close on the
                 # same day on the 'sorted distance' list
                 ins_close = profs_left_ins[b[ins_close_sort]]
-                num_close = len(ins_close)
 
                 days = np.unique(MITprofs['prof_YYYYMMDD'][ins_close]).astype(int)
                 num_days = len(days)
@@ -146,7 +143,6 @@ def update_decimate_profiles_subdaily_to_once_daily(run_code, MITprofs, grid_dir
                     ins_day = ins_close[ins_day_close]
                     if len(ins_day) > 1:
                         bb = np.argsort(np.abs(MITprofs['prof_HHMMSS'][ins_day] - closest_time))
-                        ins_closest_to_target_time = bb[0]
                         ins_to_decimate = ins_day[bb[1:]]
                         MITprofs['prof_Tweight'][ins_to_decimate,:] = 0
                         if 'prof_S' in MITprofs:
@@ -177,13 +173,10 @@ def update_decimate_profiles_subdaily_to_once_daily(run_code, MITprofs, grid_dir
                         profs_to_decimate[ins_day[di]] = 0 
     elif method == 1:
         
-        deg2rad = np.pi/180
-        
         X, Y, Z = sph2cart(MITprofs['prof_lon']*deg2rad, MITprofs['prof_lat']*deg2rad, 6357000)
 
         days = np.unique(MITprofs['prof_YYYYMMDD'])
 
-        toss_set_all_day = {}
         toss_set_all = []
         total_toss = 0
         
@@ -214,56 +207,36 @@ def update_decimate_profiles_subdaily_to_once_daily(run_code, MITprofs, grid_dir
         MITprofs['prof_Tweight'][toss_set_all,:] = 0
         MITprofs['prof_Sweight'][toss_set_all,:] = 0
        
-        update_remove_zero_T_S_weighted_profiles_from_MITprof('20181202', MITprofs , "nlasd")
-    
+        update_remove_zero_T_S_weighted_profiles_from_MITprof(MITprofs)
 
     print('Num T and S weight > 0, post')
     print('{:>10} {:>10}'.format(np.sum(MITprofs['prof_Tweight'] > 0), np.sum(MITprofs['prof_Sweight'] > 0)))
 
-    
+def main(run_code, MITprofs):
 
-def main(run_code, MITprofs, grid_dir):
-
-    grid_dir = '/home/sweet/Desktop/ECCO-Insitu-Ian/Matlab-Dependents'
-    #llc270_grid_dir = 'C:\\Users\\szswe\\Downloads\\grid_llc270_common-20240125T224704Z-001\\grid_llc270_common'
-    print("update_decimate_profiles_subdaily_to_once_daily")
+    print("step10: update_decimate_profiles_subdaily_to_once_daily")
 
     print('Num T and S weight > 0, pre')
     print('{:>10} {:>10}'.format(np.sum(MITprofs['prof_Tweight'] > 0), np.sum(MITprofs['prof_Sweight'] > 0)))
 
-    update_decimate_profiles_subdaily_to_once_daily(run_code, MITprofs, grid_dir)
+    update_decimate_profiles_subdaily_to_once_daily(run_code, MITprofs)
 
 if __name__ == '__main__':
-    """
+ 
     parser = argparse.ArgumentParser()
 
     parser.add_argument("-r", "--run_code", action= "store",
                         help = "Run code: 90 or 270" , dest= "run_code",
                         type = int, required= True)
-
-    parser.add_argument("-g", "--grid_dir", action= "store",
-                        help = "File path to 90/270 grids" , dest= "grid_dir",
-                        type = str, required= True)
     
     parser.add_argument("-m", "--MIT_dir", action= "store",
                     help = "File path to NETCDF files containing MITprofs info." , dest= "MIT_dir",
                     type = str, required= True)
-    
 
     args = parser.parse_args()
 
     run_code = args.run_code
-    grid_dir = args.grid_dir
     MITprofs_fp = args.MIT_dir
-    """
-
-    MITprofs_fp = '/home/sweet/Desktop/ECCO-Insitu-Ian/Python-Dest'
-    MITprofs_fp = '/home/sweet/Desktop/ECCO-Insitu-Ian/Original-Matlab-Dest/20190131_END_CHAIN'
-
-    """
-    if run_code != 90 or run_code != 270:
-        raise Exception("Runcode has to be 90 or 270!")
-    """
     
     nc_files = glob.glob(os.path.join(MITprofs_fp, '*.nc'))
     if len(nc_files) == 0:
@@ -271,12 +244,9 @@ if __name__ == '__main__':
     for file in nc_files:
         MITprofs = MITprof_read(file, 10)
 
-    run_code = '20181218_2'
-    grid_dir = "hehe"
-
     # Convert all masked arrs to non-masked types
     for keys in MITprofs.keys():
         if ma.isMaskedArray(MITprofs[keys]):
             MITprofs[keys] = MITprofs[keys].filled(np.NaN)
     
-    main(run_code, MITprofs, grid_dir)
+    main(run_code, MITprofs)

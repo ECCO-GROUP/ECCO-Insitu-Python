@@ -1,84 +1,32 @@
 import argparse
 import glob
 import os
-from tools import load_llc90_grid, load_llc270_grid, sph2cart, MITprof_read
+from tools import intrep_check, load_llc90_grid, load_llc270_grid, sph2cart, MITprof_read
 from scipy.interpolate import griddata
 import numpy as np
 
-def make_F_llc90_ALL_INS_SURF_XYZ_to_INDEX(bathy_90, X_90, Y_90, Z_90):
-
-    ## Prepare the nearest neighbor mapping
-    # do the big mapping.
-    #AI_90(1:end) = 1:length(bathy_90(:));
-    AI_90 = np.arange(bathy_90.size)
-    # these are the x,y,z coordinates of the 'good' cells in llc90
-    # xyz= [X_90(: ) Y_90(: ) Z_90(: )];
-    X_90 = X_90.flatten(order = 'F')
-    Y_90 = Y_90.flatten(order = 'F')
-    Z_90 = Z_90.flatten(order = 'F')
-    xyz = np.column_stack((X_90, Y_90, Z_90))
-
-    # these AI points are in no domain, they are just a list of points
-    # a mapping between these x,y,z points and the AI_90 index
-    # you provide an x,y,z and F_llc90_XYZ_to_INDEX provides you with an
-    # index in the global llc90 file correpsonding with the nearest
-    # neighbor.
-
-    #F_llc90_ALL_INS_SURF_XYZ_to_INDEX = griddata(xyz, AI_90, xyz, method='nearest')
-    #F_grid_PF_XYZ_to_INDEX = griddata(model_xyz, AI_grid_pf, (prof_x, prof_y, prof_z), method='nearest')
-    F_llc90_ALL_INS_SURF_XYZ_to_INDEX = TriScatteredInterp(xyz, AI_90,'nearest')
-
-    return F_llc90_ALL_INS_SURF_XYZ_to_INDEX
-
-def make_F_llc270_ALL_INS_SURF_XYZ_to_INDEX(X_270, Y_270, Z_270, bathy_270, good_ins_270):
-    #AI(1:end) = 1:length(bathy_270(:));
-    AI_270 = np.arange(bathy_270.size)
-    AI_270 = AI_270[np.unravel_index(good_ins_270, AI_270.shape, order = 'F')]
-    # xyz= [X_270(good_ins_270) Y_270(good_ins_270) Z_270(good_ins_270)];
-    good_ins_270_index = np.unravel_index(good_ins_270, X_270.shape, order = 'F')
-    X_270 = X_270[good_ins_270_index].flatten(order = 'F')
-    Y_270 = Y_270[good_ins_270_index].flatten(order = 'F')
-    Z_270 = Z_270[good_ins_270_index].flatten(order = 'F')
-    xyz = np.column_stack((X_270, Y_270, Z_270))
-
-    F_llc270_ALL_INS_SURF_XYZ_to_INDEX = TriScatteredInterp(xyz, AI_270,'nearest')
-
-    return F_llc270_ALL_INS_SURF_XYZ_to_INDEX
-
-
-class TriScatteredInterp:
+def update_spatial_bin_index_on_prepared_profiles(bin_dir, MITprofs, grid_dir):
     """
-    TriScatteredIntrep function to mimick the behavior of function in Matlab
-    """
-    def __init__(self, X, V, method='nearest'):
-        self.X = X
-        self.V = V
-        self.method = method
-        #self.interpolated_values = griddata(self.X, self.V, self.X, method=self.method)
-    """
-    Python's griddata will return an array of interpolated values for all 
-    numbers.This allows 3 points to be passed and interpolated.
-    """
-    def __call__(self, points):
-        return griddata(self.X, self.V, points, method=self.method)
-    
-def update_spatial_bin_index_on_prepared_profiles(run_code, MITprofs, grid_dir):
+    This script updates each profile with a bin index that is specified from
+    some file.  To date this has been used for geodesic bins but any bin
+    could be used in practice.
 
-    if run_code == 10242 or run_code == 2562:
-            
-        # the bin data have to be projected to the model grid;
-        bin_dir = '/home/sweet/Desktop/ECCO-Insitu-Ian/Matlab-Dependents/grid_llc90/sphere_point_distribution'
-        bin_file_1 = os.path.join(bin_dir, 'llc090_sphere_point_n_10242_ids.bin')
-        bin_file_2 =  os.path.join(bin_dir, 'llc090_sphere_point_n_02562_ids.bin')
+    Input Parameters:
+        bin_dir: Path to llc090_sphere_point_n_10242_ids.bin and llc090_sphere_point_n_02562_ids.bin
+        MITprof: a single MITprof object
+        grid_dir: directory path of grid to be read in
 
-        bin_llcN = 90
+    Output:
+        Operates on MITprofs directly 
+    """
+
+    bin_file_1 = os.path.join(bin_dir, 'llc090_sphere_point_n_10242_ids.bin')
+    bin_file_2 =  os.path.join(bin_dir, 'llc090_sphere_point_n_02562_ids.bin')
+    bin_llcN = 90
 
     # read binary files
     siz = [bin_llcN, 13*bin_llcN, 1, 1]
-    typ = 1
-    prec ='float32'  # real*4 corresponds to float32
-    skip = 0 
-    mform = '>f4' # 'ieee-be' corresponds to f4
+    mform = '>f4' 
     # NOTE: if bin_llcN = 270 these files dont work lol
     with open(bin_file_1, 'rb') as fid:
         bin_1 = np.fromfile(fid, dtype=mform)
@@ -91,63 +39,45 @@ def update_spatial_bin_index_on_prepared_profiles(run_code, MITprofs, grid_dir):
         bin_2 = bin_2.reshape((siz[0], siz[1], siz[2]))
 
     ## Prepare the nearest neighbor mapping
-
     if bin_llcN  == 90:
 
         lon_90, lat_90, bathy_90, X_90, Y_90, Z_90 = load_llc90_grid(grid_dir, 2)
 
-        F = make_F_llc90_ALL_INS_SURF_XYZ_to_INDEX(bathy_90, X_90, Y_90, Z_90)
         X = X_90.flatten(order = 'F')
         Y = Y_90.flatten(order = 'F')
         Z = Z_90.flatten(order = 'F')
         lon_llc = lon_90.flatten(order = 'F')
         lat_llc = lat_90.flatten(order = 'F')
-    
+
+        xyz = np.column_stack((X, Y, Z))
+        # map a grid index to each profile.
+        AI = np.arange(bathy_90.size)
+
     if bin_llcN  == 270:
-        lon_270, lat_270, blank_270, wet_ins_270_k, X_270, Y_270, Z_270, bathy_270, good_ins_270 = load_llc270_grid(grid_dir)
-        F = make_F_llc270_ALL_INS_SURF_XYZ_to_INDEX(X_270, Y_270, Z_270, bathy_270, good_ins_270)
+        lon_270, lat_270, X_270, Y_270, Z_270, bathy_270, good_ins_270 = load_llc270_grid(grid_dir, 2)
         X = X_270.flatten(order = 'F')
         Y = Y_270.flatten(order = 'F')
         Z = Z_270.flatten(order = 'F')
         lon_llc = lon_270.flatten(order = 'F')
         lat_llc = lat_270.flatten(order = 'F')
-        #NOTE: not sure if deep copy is needed? check to see if we're changing these vals
- 
+
+        AI = np.arange(bathy_270.size)
+        AI = AI[np.unravel_index(good_ins_270, AI.shape, order = 'F')]
+        good_ins_270_index = np.unravel_index(good_ins_270, X_270.shape, order = 'F')
+        X_270 = X_270[good_ins_270_index].flatten(order = 'F')
+        Y_270 = Y_270[good_ins_270_index].flatten(order = 'F')
+        Z_270 = Z_270[good_ins_270_index].flatten(order = 'F')
+        xyz = np.column_stack((X_270, Y_270, Z_270))
     
     # verify that our little trick works in 4 parts of the earth
+    intrep_check(xyz, AI, X, Y, Z, lat_llc, lon_llc, 2)
+ 
     deg2rad = np.pi/180.0
-    for i in range(1,5):
-        if i == 1:
-            test_lat = 56
-            test_lon = -40
-        if i == 2:
-            test_lat = 60
-            test_lon = 10
-        if i == 3:
-            test_lat = -60
-            test_lon = -120
-        if i == 4:
-            test_lat = -69
-            test_lon = 60
-        test_x, test_y, test_z = sph2cart(test_lon*deg2rad, test_lat*deg2rad, 1)
-        testarr = np.asarray([test_x, test_y, test_z])
-        test_ind = int(F(testarr)[0])
-      
-        print("=================")
-        print("i = {} | test_ind = {} | lat = {} | lon = {}".format(i, test_ind, test_lat, test_lon))
-        print("{} {} {} | {} {} {}".format(X[test_ind], Y[test_ind], Z[test_ind], test_x, test_y, test_z))
-        print("{} {} | {} {}".format(lat_llc[test_ind], lon_llc[test_ind], test_lat, test_lon))
-        print("=================")
 
-    ##---------------------------------------------
-    ## Read and process the profile files
-    ##---------------------------------------------
-    #[prof_x, prof_y, prof_z] = sph2cart(MITprof.prof_lon*deg2rad, MITprof.prof_lat*deg2rad, 1);
-    deg2rad = np.pi/180
+    # Read and process the profile files
     prof_x, prof_y, prof_z = sph2cart(MITprofs['prof_lon']*deg2rad, MITprofs['prof_lat']*deg2rad, 1)
-    
-    # map a grid index to each profile.
-    prof_llcN_cell_index = F(np.column_stack((prof_x, prof_y, prof_z)))
+
+    prof_llcN_cell_index = griddata(xyz, AI, np.column_stack((prof_x, prof_y, prof_z)), 'nearest')
     prof_llcN_cell_index  = prof_llcN_cell_index.astype(int)
 
     # loop through the different geodesic bins
@@ -156,19 +86,17 @@ def update_spatial_bin_index_on_prepared_profiles(run_code, MITprofs, grid_dir):
     MITprofs['prof_bin_id_a'] = bin_1[prof_llcN_cell_index]
     MITprofs['prof_bin_id_b'] = bin_2[prof_llcN_cell_index]
 
-def main(run_code, MITprofs, grid_dir):
+def main(bin_dir, MITprofs, grid_dir):
 
-    grid_dir = '/home/sweet/Desktop/ECCO-Insitu-Ian/Matlab-Dependents'
-    #llc270_grid_dir = 'C:\\Users\\szswe\\Downloads\\grid_llc270_common-20240125T224704Z-001\\grid_llc270_common'
     print("step02: update_spatial_bin_index_on_prepared_profiles")
-    update_spatial_bin_index_on_prepared_profiles(run_code, MITprofs, grid_dir)
+    update_spatial_bin_index_on_prepared_profiles(bin_dir, MITprofs, grid_dir)
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-r", "--run_code", action= "store",
-                        help = "Run code: 90 or 270" , dest= "run_code",
+    parser.add_argument("-r", "--bin_dir", action= "store",
+                        help = "Directory to bin files" , dest= "bin_dir",
                         type = int, required= True)
 
     parser.add_argument("-g", "--grid_dir", action= "store",
@@ -182,17 +110,14 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    run_code = args.run_code
+    bin_dir = args.bin_dir
     grid_dir = args.grid_dir
     MITprofs_fp = args.MIT_dir
 
-    if run_code != 90 or run_code != 270:
-        raise Exception("Runcode has to be 90 or 270!")
-    
     nc_files = glob.glob(os.path.join(MITprofs_fp, '*.nc'))
     if len(nc_files) == 0:
         raise Exception("Invalid NC filepath")
     for file in nc_files:
         MITprofs = MITprof_read(file, 2)
-
-    main(run_code, MITprofs, grid_dir)
+    
+    main(bin_dir, MITprofs, grid_dir)

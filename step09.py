@@ -1,13 +1,10 @@
-import copy
+import argparse
 import glob
 import os
 import numpy as np
 import numpy.ma as ma
-import datetime as dt
-from step07 import count_profs_with_nonzero_weights
 from step08 import extract_profile_subset_from_MITprof
 from tools import MITprof_read
-import scipy.io as sio
 
 def count_nonzero_weight_profiles_with_depth(MITprof):
     """
@@ -30,7 +27,18 @@ def count_nonzero_weight_profiles_with_depth(MITprof):
     return depths, T_counts, S_counts
 
 
-def update_remove_extraneous_depth_levels(run_code, MITprofs, grid_dir):
+def update_remove_extraneous_depth_levels(MITprofs):
+    """
+    Remove profiles that whose T and S weights are all zero from 
+    from MITprof structures
+    
+    Input Parameters:
+        MITprof: a single MITprof object
+
+    Output:
+        Operates on MITprofs directly 
+    
+    """
 
     dd_pre, tt, ss = count_nonzero_weight_profiles_with_depth(MITprofs)
 
@@ -65,24 +73,14 @@ def update_remove_extraneous_depth_levels(run_code, MITprofs, grid_dir):
         print(f'max zi is the same as prof depth, no need to cut out missing depth levels')
 
    
-def main(run_code, MITprofs, grid_dir):
+def main(MITprofs):
 
-    grid_dir = '/home/sweet/Desktop/ECCO-Insitu-Ian/Matlab-Dependents'
-    #llc270_grid_dir = 'C:\\Users\\szswe\\Downloads\\grid_llc270_common-20240125T224704Z-001\\grid_llc270_common'
     print("update_remove_extraneous_depth_levels")
-    update_remove_extraneous_depth_levels(run_code, MITprofs, grid_dir)
+    update_remove_extraneous_depth_levels(MITprofs)
 
 if __name__ == '__main__':
-    """
+
     parser = argparse.ArgumentParser()
-
-    parser.add_argument("-r", "--run_code", action= "store",
-                        help = "Run code: 90 or 270" , dest= "run_code",
-                        type = int, required= True)
-
-    parser.add_argument("-g", "--grid_dir", action= "store",
-                        help = "File path to 90/270 grids" , dest= "grid_dir",
-                        type = str, required= True)
     
     parser.add_argument("-m", "--MIT_dir", action= "store",
                     help = "File path to NETCDF files containing MITprofs info." , dest= "MIT_dir",
@@ -90,19 +88,7 @@ if __name__ == '__main__':
     
 
     args = parser.parse_args()
-
-    run_code = args.run_code
-    grid_dir = args.grid_dir
     MITprofs_fp = args.MIT_dir
-    """
-
-    MITprofs_fp = '/home/sweet/Desktop/ECCO-Insitu-Ian/Python-Dest'
-    MITprofs_fp = '/home/sweet/Desktop/ECCO-Insitu-Ian/Original-Matlab-Dest/20190131_END_CHAIN'
-
-    """
-    if run_code != 90 or run_code != 270:
-        raise Exception("Runcode has to be 90 or 270!")
-    """
     
     nc_files = glob.glob(os.path.join(MITprofs_fp, '*.nc'))
     if len(nc_files) == 0:
@@ -110,12 +96,9 @@ if __name__ == '__main__':
     for file in nc_files:
         MITprofs = MITprof_read(file, 9)
 
-    run_code = '20181202'
-    grid_dir = "hehe"
-
     # Convert all masked arrs to non-masked types
     for keys in MITprofs.keys():
         if ma.isMaskedArray(MITprofs[keys]):
             MITprofs[keys] = MITprofs[keys].filled(np.NaN)
     
-    main(run_code, MITprofs, grid_dir)
+    main(MITprofs)

@@ -1,3 +1,4 @@
+import argparse
 import copy
 import glob
 import os
@@ -40,9 +41,6 @@ def mynanmean(x, dim = None):
     return m
 
 def count_profs_with_nonzero_weights(MITprofs):
-    """
-    careful when calling this method, the ins might behave unexpectedly b/c of intersect/ union methods used 
-    """
 
     num_profs = len(MITprofs['prof_lon'])
     nonzero_T_ins = np.where(np.sum(MITprofs['prof_Tweight'], axis = 1) > 0)[0]
@@ -69,7 +67,19 @@ def count_profs_with_nonzero_weights(MITprofs):
     return num_nonzero_T, num_nonzero_S, num_nonzero_TS, num_profs, zero_weight_T_ins, zero_weight_S_ins, zero_weight_TS_ins, nonzero_T_ins, nonzero_S_ins, nonzero_TS_ins
 
 
-def update_zero_weight_points_on_prepared_profiles(run_code, MITprofs, grid_dir):
+def update_zero_weight_points_on_prepared_profiles(run_code, MITprofs):
+    """
+    This script zeros out  profile profTweight and profSweight on
+    points that match some criteria
+
+    Input Parameters:
+        run_code:
+        20190126_high_lat
+        MITprof: a single MITprof object
+
+    Output:
+        Operates on MITprofs directly 
+    """
     
     # SET INPUT PARAMETERS
     fillVal=-9999
@@ -128,28 +138,9 @@ def update_zero_weight_points_on_prepared_profiles(run_code, MITprofs, grid_dir)
 
     % plot_map_bad_profiles : 0/1 whether to make a plot of bad profs locations
     """
-
-    if run_code == '20190126':
-        save_output_to_disk = 0
-        zero_criteria_code = np.arange(1,12)
-        
-        exclude_high_latitude_profiles_from_clim_cost = 0
-        
-        prof_Tmin = -2
-        prof_Tmax = 40
-        
-        prof_Smin = 20
-        prof_Smax = 40
-        
-        prof_subsurface_min_S_threshold = [30, 34]
-        prof_subsurface_min_S_threshold_depth = [50, 250]
-        
-        profile_avg_cost_threshold = 16
-        single_datum_cost_threshold = 100
             
-    elif run_code == '20190126_high_lat':
-   
-        save_output_to_disk = 0
+    if run_code == '20190126_high_lat':
+
         # NOTE: using 0-11 instead of 1-12
         zero_criteria_code = np.arange(1,12)
         
@@ -170,40 +161,6 @@ def update_zero_weight_points_on_prepared_profiles(run_code, MITprofs, grid_dir)
         profile_avg_cost_threshold = 16
         single_datum_cost_threshold = 100
             
-    elif run_code ==  '20181202':
-        
-        save_output_to_disk = 0
-        zero_criteria_code = np.arange(1,11)
-        exclude_high_latitude_profiles_from_clim_cost = 0
-        
-        prof_Tmin = -2
-        prof_Tmax = 40
-        
-        prof_Smin = 20
-        prof_Smax = 40
-        
-        profile_avg_cost_threshold = 16
-        single_datum_cost_threshold = 100
-            
-    elif run_code == '20181202_high_lat':
-        
-        save_output_to_disk = 0
-        zero_criteria_code = np.arange(1,11)
-        
-        # don't bother testing high latitude profiles against the
-        # climatology because we don't trust the climatology.
-        exclude_high_latitude_profiles_from_clim_cost = 1
-        high_lat_cutoff = 60
-        
-        prof_Tmin = -2
-        prof_Tmax = 40
-        
-        prof_Smin = 20
-        prof_Smax = 40
-        
-        profile_avg_cost_threshold = 16
-        single_datum_cost_threshold = 100
-
     num_profs = len(MITprofs['prof_YYYYMMDD'])
     num_orig_nonzero_Tweights = len(np.where(MITprofs['prof_Tweight'])[0])
     
@@ -215,7 +172,6 @@ def update_zero_weight_points_on_prepared_profiles(run_code, MITprofs, grid_dir)
         print("START Nonzero T weights {}".format(num_orig_nonzero_Tweights))
         print("No S")
 
-    
     nnt_orig, nns_orig, nnts_orig, np_orig, zwti_orig, zwsi_orig, zwtsi_orig, nzwti_orig, nzwsi_orig, nzwtsi_orig = count_profs_with_nonzero_weights(MITprofs)
     
     print(f'num profs: {np_orig:10d}\nnum nonzero T : {nnt_orig:10d}\nnum nonzero S : {nns_orig:10d}\nnum nonzero TS: {nnts_orig:10d}')
@@ -247,9 +203,7 @@ def update_zero_weight_points_on_prepared_profiles(run_code, MITprofs, grid_dir)
         if zero_critera_code_i == 1: #  profiles already have zero or missing weights
 
             # Find indices of NaNs and non-positive values
-            # ins1 = find(isnan(MITprof.prof_Tweight));
             ins1 = np.where(np.isnan(MITprofs['prof_Tweight'].flatten(order = 'F')))
-            # ins2 = find(MITprof.prof_Tweight <= 0);
             ins2 = np.where(MITprofs['prof_Tweight'].flatten(order = 'F') <= 0)
             ins3 = np.union1d(ins1, ins2)
 
@@ -262,7 +216,6 @@ def update_zero_weight_points_on_prepared_profiles(run_code, MITprofs, grid_dir)
             # Now salinity
             if 'prof_S' in MITprofs:
                 # nan weights
-                # ins1 = find(isnan(MITprof.prof_Sweight));
                 ins1 = np.where(np.isnan(MITprofs['prof_Sweight'].flatten(order = 'F')))
                 # zero weights or negative weights
                 ins2 = np.where(MITprofs['prof_Sweight'].flatten(order = 'F') <= 0)
@@ -380,9 +333,6 @@ def update_zero_weight_points_on_prepared_profiles(run_code, MITprofs, grid_dir)
                 zero_S_weight_reason[ins4] = zero_S_weight_reason[ins4] + 2**(zero_critera_code_i -1)
 
         if zero_critera_code_i == 7: # illegal dates/times
-
-            all_years = np.floor(MITprofs['prof_YYYYMMDD']/1e4)
-            years = np.unique(all_years)
 
             y = np.zeros(num_profs, dtype=int)
             m = np.zeros(num_profs, dtype=int)
@@ -529,7 +479,6 @@ def update_zero_weight_points_on_prepared_profiles(run_code, MITprofs, grid_dir)
             if 'prof_S' in MITprofs:
                 
                 # PART 1, FIND BAD CONDUCTIVITY CELLS
-
                 num_tests = len(prof_subsurface_min_S_threshold_depth)    
                 # pull the salinity field
                 tmpS = MITprofs_new['prof_S']
@@ -560,7 +509,6 @@ def update_zero_weight_points_on_prepared_profiles(run_code, MITprofs, grid_dir)
                     tmp[:, ssdi] = np.nan
             
                     # find the median value of tmp
-                    # x = mynanmedian(tmp');
                     x = np.nanmedian(tmp.T, axis = 0)
 
                     # identify as likely bad profiles all of those
@@ -625,58 +573,32 @@ def update_zero_weight_points_on_prepared_profiles(run_code, MITprofs, grid_dir)
     """
 
 
-def main(run_code, MITprofs, grid_dir):
+def main(run_code, MITprofs):
 
-    grid_dir = '/home/sweet/Desktop/ECCO-Insitu-Ian/Matlab-Dependents'
-    #llc270_grid_dir = 'C:\\Users\\szswe\\Downloads\\grid_llc270_common-20240125T224704Z-001\\grid_llc270_common'
     print("update_zero_weight_points_on_prepared_profiles")
-    update_zero_weight_points_on_prepared_profiles(run_code, MITprofs, grid_dir)
+    update_zero_weight_points_on_prepared_profiles(run_code, MITprofs)
 
 if __name__ == '__main__':
-    """
+ 
     parser = argparse.ArgumentParser()
 
     parser.add_argument("-r", "--run_code", action= "store",
                         help = "Run code: 90 or 270" , dest= "run_code",
                         type = int, required= True)
-
-    parser.add_argument("-g", "--grid_dir", action= "store",
-                        help = "File path to 90/270 grids" , dest= "grid_dir",
-                        type = str, required= True)
     
     parser.add_argument("-m", "--MIT_dir", action= "store",
                     help = "File path to NETCDF files containing MITprofs info." , dest= "MIT_dir",
                     type = str, required= True)
-    
 
     args = parser.parse_args()
 
     run_code = args.run_code
-    grid_dir = args.grid_dir
     MITprofs_fp = args.MIT_dir
-    """
 
-    MITprofs_fp = '/home/sweet/Desktop/ECCO-Insitu-Ian/Python-Dest'
-    MITprofs_fp = '/home/sweet/Desktop/ECCO-Insitu-Ian/Original-Matlab-Dest/20190131_END_CHAIN'
-
-    """
-    if run_code != 90 or run_code != 270:
-        raise Exception("Runcode has to be 90 or 270!")
-    """
-    
     nc_files = glob.glob(os.path.join(MITprofs_fp, '*.nc'))
     if len(nc_files) == 0:
         raise Exception("Invalid NC filepath")
     for file in nc_files:
         MITprofs = MITprof_read(file, 7)
 
-    run_code = '20190126_high_lat'
-    grid_dir = "hehe"
-
-    # Convert all masked arrs to non-masked types
-    for keys in MITprofs.keys():
-        if ma.isMaskedArray(MITprofs[keys]):
-            MITprofs[keys] = MITprofs[keys].filled(np.NaN)
-    
-
-    main(run_code, MITprofs, grid_dir)
+    main(run_code, MITprofs)

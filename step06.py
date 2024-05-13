@@ -1,9 +1,29 @@
+import argparse
 import glob
 import os
 import numpy as np
 from tools import MITprof_read
 
 def sw_pres(DEPTH, LAT):
+    """
+    SW_PRES    Pressure from depth
+    %===========================================================================
+    % SW_PRES   $Revision: 1.5 $  $Date: 1994/10/11 01:23:32 $
+    %           Copyright (C) CSIRO, Phil Morgan 1993.
+    %
+    % USAGE:  pres = sw_pres(depth,lat)
+    %
+    % DESCRIPTION:
+    %    Calculates pressure in dbars from depth in meters.
+    %
+    % INPUT:  (all must have same dimensions)
+    %   depth = depth [metres]  
+    %   lat   = Latitude in decimal degress north [-90..+90]
+    %           (LAT may have dimensions 1x1 or 1xn where depth(mxn) )
+    %
+    % OUTPUT:
+    %  pres   = Pressure    [db]
+    """
 
     # CHECK INPUTS
     mD,nD = DEPTH.shape
@@ -14,8 +34,7 @@ def sw_pres(DEPTH, LAT):
 
     if (mD != mL) or (nD != nL):              # DEPTH & LAT are not the same shape
         if (nD ==nL) & (mL==1):               # LAT for each column of DEPTH
-            #LAT = LAT( ones(1,mD), : );      # copy LATS down each column
-            LAT = np.tile(LAT[0, :], (LAT.shape[0], 1))     # s.t. dim(DEPTH)==dim(LAT)
+            LAT = np.tile(LAT[0, :], (LAT.shape[0], 1))     # copy LATS down each column s.t. dim(DEPTH)==dim(LAT)
         else:
             raise Exception('sw_pres.m:  Inputs arguments have wrong dimensions')
 
@@ -37,6 +56,27 @@ def sw_pres(DEPTH, LAT):
 
 
 def sw_adtg(S,T,P):
+    """
+    % SW_ADTG    Adiabatic temperature gradient
+    %===========================================================================
+    % SW_ADTG   $Revision: 1.4 $  $Date: 1994/10/10 04:16:37 $
+    %           Copyright (C) CSIRO, Phil Morgan  1992.
+    %
+    % adtg = sw_adtg(S,T,P)
+    %
+    % DESCRIPTION:
+    %    Calculates adiabatic temperature gradient as per UNESCO 1983 routines.
+    %
+    % INPUT:  (all must have same dimensions)
+    %   S = salinity    [psu      (PSS-78) ]
+    %   T = temperature [degree C (IPTS-68)]
+    %   P = pressure    [db]
+    %       (P may have dims 1x1, mx1, 1xn or mxn for S(mxn) )
+    %
+    % OUTPUT:
+    %   ADTG = adiabatic temperature gradient [degree_C/db]
+    """
+
 
     # CHECK S,T,P dimensions and verify consistent
     ms, ns = S.shape
@@ -97,9 +137,29 @@ def sw_adtg(S,T,P):
 
     return ADTG
 
-
 def sw_ptmp(S, T, P, PR):
+    """
+    % SW_PTMP    Potential temperature
+    %===========================================================================
+    % SW_PTMP  $Revision: 1.3 $  $Date: 1994/10/10 05:45:13 $
+    %          Copyright (C) CSIRO, Phil Morgan 1992. 
+    %
+    % USAGE:  ptmp = sw_ptmp(S,T,P,PR) 
+    %
+    % DESCRIPTION:
+    %    Calculates potential temperature as per UNESCO 1983 report.
+    %   
+    % INPUT:  (all must have same dimensions)
+    %   S  = salinity    [psu      (PSS-78) ]
+    %   T  = temperature [degree C (IPTS-68)]
+    %   P  = pressure    [db]
+    %   PR = Reference pressure  [db]
+    %        (P & PR may have dims 1x1, mx1, 1xn or mxn for S(mxn) )
+    %
+    % OUTPUT:
+    %   ptmp = Potential temperature relative to PR [degree C (IPTS-68)]
 
+    """
     # CHECK S,T,P dimensions and verify consistent
     ms, ns = S.shape
     mt, nt = T.shape
@@ -172,104 +232,28 @@ def sw_ptmp(S, T, P, PR):
 
     return PT
 
-def update_prof_insitu_T_to_potential_T(run_code, MITprofs, grid_dir):
+def update_prof_insitu_T_to_potential_T(run_code, MITprofs):
+    """
+    This script updates the profile insitu temperatures so that they are in
+    potential temperature
+
+    Input Parameters:
+        run_code: 20181202_use_clim_for_missing_S
+        MITprof: a single MITprof object
+
+    Output:
+        Operates on MITprofs directly 
+    """
 
     # SET INPUT PARAMETERS
     fillVal=-9999
-    checkVal=-9000
 
     # by default, do not replace missing salinity values with salinity values
     # from the climatology
     replace_missing_S_with_clim_S = 0
 
     if run_code == '20181202_use_clim_for_missing_S':
-        save_output_to_disk = 0
         replace_missing_S_with_clim_S = 1
-            
-    elif run_code == 'NODC_20181029_clim_S':
-        raise Exception("uncoded")
-        """
-        output_rootdir = ['/home/ifenty/data/observations/insitu/NODC/NODC_20180508/all/']
-        rootdir = ['~/data11/ifenty/observations/insitu/20181015_NCEI/']
-        
-
-        input_dir  =  [rootdir 'step_03_sigmas'];
-        output_dir =  [output_rootdir 'step_04_potential_temperature_clim_S']
-        
-        file_suffix_in  = ['step_03.nc'];
-        file_suffix_out = ['step_04.nc']
-        
-        fig_dir = [output_dir '/figures']
-    
-        cd(input_dir);
-        f = dir(['*nc']);
-        
-        for i = 1:length(f)
-            fDataIn{i}  =   f(i).name;
-            fDataOut{i} =  [f(i).name(1:end-length(file_suffix_in)) file_suffix_out];
-        end
-        
-        replace_missing_S_with_clim_S = 1;
-        """
-    elif run_code == 'NODC_20181008':
-        raise Exception("uncoded")
-        """
-        rootdir = ['/home/ifenty/data/observations/insitu/NODC/NODC_20180508/all/']
-        input_dir  =  [rootdir 'step_03_sigmas'];
-        output_dir =  [rootdir 'step_04_potential_temperature']
-        
-        file_suffix_in  = ['step_03.nc'];
-        file_suffix_out = ['step_04.nc']
-        
-        fig_dir = [output_dir '/figures']
-    
-        cd(input_dir);
-        f = dir(['*nc']);
-        
-        for i = 1:length(f)
-            fDataIn{i}  =   f(i).name;
-            fDataOut{i} =  [f(i).name(1:end-length(file_suffix_in)) file_suffix_out];
-        end
-        """
-    elif run_code ==  '20181015_llc90_ITP':
-        raise Exception("uncoded")
-        """
-        rootdir = '/home/ifenty/data/observations/insitu/ITP/201810/TO_JPL_2018/'
-        input_dir  =  [rootdir 'step_03_sigmas'];
-        output_dir =  [rootdir 'step_04_potential_temperature']
-        
-        file_suffix_in  = ['step_03.nc'];
-        file_suffix_out = ['step_04.nc']
-        
-        fig_dir = [output_dir '/figures']
-    
-        cd(input_dir);
-        f = dir(['*nc']);
-        
-        for i = 1:length(f)
-            fDataIn{i}  =   f(i).name;
-            fDataOut{i} =  [f(i).name(1:end-length(file_suffix_in)) file_suffix_out];
-        end
-        """
-    elif run_code == '20181015_llc90_GOSHIP':
-        """
-        rootdir = '/home/ifenty/data/observations/insitu/GO-SHIP/SIO_201810/TO_JPL_2018/'
-        input_dir  =  [rootdir 'step_03_sigmas'];
-        output_dir =  [rootdir 'step_04_potential_temperature']
-        
-        file_suffix_in  = ['step_03.nc'];
-        file_suffix_out = ['step_04.nc']
-        
-        fig_dir = [output_dir '/figures']
-    
-        cd(input_dir);
-        f = dir(['*nc']);
-        
-        for i = 1:length(f)
-            fDataIn{i}  =   f(i).name;
-            fDataOut{i} =  [f(i).name(1:end-length(file_suffix_in)) file_suffix_out];
-        end
-        """
     
     lats = MITprofs['prof_lat']
     # flatten array and converted all NaN vals to fillval
@@ -280,12 +264,10 @@ def update_prof_insitu_T_to_potential_T(run_code, MITprofs, grid_dir):
     good_T_and_S_ins = np.where((prof_T != fillVal) & (prof_S != fillVal))[0]
     
     if replace_missing_S_with_clim_S:
-        # missing_S_ins = find(prof_T ~= fillVal & prof_S == fillVal);
         missing_S_ins = np.where((prof_T != fillVal) & (prof_S == fillVal))[0]
         prof_S[missing_S_ins] = MITprofs['prof_Sclim'].ravel(order = 'F')[missing_S_ins]
 
-    # to qualify you need to have a valid T, S  %%
-    #good_T_and_S_ins = find(prof_T ~= fillVal & prof_S ~= fillVal);
+    # to qualify you need to have a valid T, S 
     good_T_and_S_ins = np.where((prof_T != fillVal) & (prof_S != fillVal))[0]
 
     prof_S = prof_S.reshape(MITprofs['prof_S'].shape, order = 'F')
@@ -300,7 +282,6 @@ def update_prof_insitu_T_to_potential_T(run_code, MITprofs, grid_dir):
         # to qualify you need to have a valid T, S  %%
         good_T_and_S_ins = np.where((prof_T != fillVal) & (prof_S != fillVal))[0]
 
-    # Make empty arryas.
     prof_T_tmp = np.full_like(prof_T, np.nan)
     prof_S_tmp = np.full_like(prof_S, np.nan)
 
@@ -314,14 +295,11 @@ def update_prof_insitu_T_to_potential_T(run_code, MITprofs, grid_dir):
     if len(good_T_and_S_ins) > 0:
         # Prepare 2D matrix of pres and lats required for sw_ptmp
         depths = MITprofs['prof_depth']
-        #depths_mat = repmat(depths, [1 length(lats)]);
         depths_mat = np.tile(depths, (len(lats), 1)).T
 
-        #lats_mat = repmat(lats, [1 length(depths)])';
         lats_mat = np.tile(lats, (len(depths), 1))
         
         # calculate equivalent pressure from depth
-        #pres_mat = sw_pres(depths_mat, lats_mat);
         pres_mat = sw_pres(depths_mat, lats_mat)
         pres_mat = pres_mat.T
     
@@ -338,52 +316,32 @@ def update_prof_insitu_T_to_potential_T(run_code, MITprofs, grid_dir):
     MITprofs['prof_T'] = ptemp
  
     
-def main(run_code, MITprofs, grid_dir):
+def main(run_code, MITprofs):
 
-    grid_dir = '/home/sweet/Desktop/ECCO-Insitu-Ian/Matlab-Dependents'
-    #llc270_grid_dir = 'C:\\Users\\szswe\\Downloads\\grid_llc270_common-20240125T224704Z-001\\grid_llc270_common'
     print("step06: update_prof_insitu_T_to_potential_T")
-    update_prof_insitu_T_to_potential_T(run_code, MITprofs, grid_dir)
+    update_prof_insitu_T_to_potential_T(run_code, MITprofs)
 
 if __name__ == '__main__':
-    """
+ 
     parser = argparse.ArgumentParser()
 
     parser.add_argument("-r", "--run_code", action= "store",
                         help = "Run code: 90 or 270" , dest= "run_code",
                         type = int, required= True)
-
-    parser.add_argument("-g", "--grid_dir", action= "store",
-                        help = "File path to 90/270 grids" , dest= "grid_dir",
-                        type = str, required= True)
     
     parser.add_argument("-m", "--MIT_dir", action= "store",
                     help = "File path to NETCDF files containing MITprofs info." , dest= "MIT_dir",
                     type = str, required= True)
-    
 
     args = parser.parse_args()
 
     run_code = args.run_code
-    grid_dir = args.grid_dir
     MITprofs_fp = args.MIT_dir
-    """
 
-    MITprofs_fp = '/home/sweet/Desktop/ECCO-Insitu-Ian/Python-Dest'
-    MITprofs_fp = '/home/sweet/Desktop/ECCO-Insitu-Ian/Original-Matlab-Dest/20190131_END_CHAIN'
-
-    """
-    if run_code != 90 or run_code != 270:
-        raise Exception("Runcode has to be 90 or 270!")
-    """
-    
     nc_files = glob.glob(os.path.join(MITprofs_fp, '*.nc'))
     if len(nc_files) == 0:
         raise Exception("Invalid NC filepath")
     for file in nc_files:
         MITprofs = MITprof_read(file, 6)
 
-    run_code = '20181202_use_clim_for_missing_S'
-    grid_dir = "hehe"
-
-    main(run_code, MITprofs, grid_dir)
+    main(run_code, MITprofs)
