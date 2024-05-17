@@ -52,22 +52,6 @@ def update_spatial_bin_index_on_prepared_profiles(bin_dir, MITprofs, grid_dir):
         xyz = np.column_stack((X, Y, Z))
         # map a grid index to each profile.
         AI = np.arange(bathy_90.size)
-
-    if bin_llcN  == 270:
-        lon_270, lat_270, X_270, Y_270, Z_270, bathy_270, good_ins_270 = load_llc270_grid(grid_dir, 2)
-        X = X_270.flatten(order = 'F')
-        Y = Y_270.flatten(order = 'F')
-        Z = Z_270.flatten(order = 'F')
-        lon_llc = lon_270.flatten(order = 'F')
-        lat_llc = lat_270.flatten(order = 'F')
-
-        AI = np.arange(bathy_270.size)
-        AI = AI[np.unravel_index(good_ins_270, AI.shape, order = 'F')]
-        good_ins_270_index = np.unravel_index(good_ins_270, X_270.shape, order = 'F')
-        X_270 = X_270[good_ins_270_index].flatten(order = 'F')
-        Y_270 = Y_270[good_ins_270_index].flatten(order = 'F')
-        Z_270 = Z_270[good_ins_270_index].flatten(order = 'F')
-        xyz = np.column_stack((X_270, Y_270, Z_270))
     
     # verify that our little trick works in 4 parts of the earth
     intrep_check(xyz, AI, X, Y, Z, lat_llc, lon_llc, 2)

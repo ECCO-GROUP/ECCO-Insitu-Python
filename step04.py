@@ -120,8 +120,6 @@ def update_sigmaTS_on_prepared_profiles(run_code, MITprofs, grid_dir, sigma_dir)
     
     if grid_code == 90:
         wet_ins_90_k, X_90, Y_90, Z_90, AI_90, z_cen_90, lat_90, lon_90 = load_llc90_grid(grid_dir, 4)
-    if grid_code == 270:
-        wet_ins_90_k, X_90, Y_90, Z_90, AI_90, z_cen_90, lat_90, lon_90 = load_llc270_grid(grid_dir, 4)
 
     # salt
     sigma_S_path = os.path.join(sigma_dir, 'Salt_sigma_smoothed_method_02_masked_merged_capped_extrapolated.bin')
