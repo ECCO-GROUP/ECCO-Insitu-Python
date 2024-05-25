@@ -72,47 +72,6 @@ def update_monthly_mean_TS_clim_WOA13v2_on_prepared_profiles(TS_clim_dir, MITpro
     # map a climatology grid index to each profile.
     prof_clim_cell_index = griddata(xyz, AI, (prof_x, prof_y, prof_z), method='nearest')
     prof_clim_cell_index = prof_clim_cell_index.astype(int)
-   
-    """
-    #NOTE: code to check prof_x/prof_y/prof_z difference
-    import scipy.io as sio
-    mat_contents = sio.loadmat('/home/sweet/Desktop/ECCO-Insitu-Ian/Matlab-Dependents/TS Climatology/prof_x.mat')
-    mat_contents['prof_x'] = np.squeeze(mat_contents['prof_x'])
-    ticker = 0
-    for a in np.arange(prof_x.size):
-        if prof_x[a] != mat_contents['prof_x'][a]:
-            print(prof_x[a])
-            print(mat_contents['prof_x'][a])
-            print("--------")
-            ticker = ticker + 1
-    raise Exception(ticker)
-    """
-    """
-    #NOTE: code to check for prof_cell... intrep difference
-    import scipy.io as sio
-    mat_contents = sio.loadmat('/home/sweet/Desktop/ECCO-Insitu-Ian/Matlab-Dependents/TS Climatology/cells.mat')
-    mat_contents['prof_clim_cell_index'] = np.squeeze(mat_contents['prof_clim_cell_index'])
-    mat_contents['prof_clim_cell_index'] = mat_contents['prof_clim_cell_index'] - 1
-    ticker = 0
-    for a in np.arange(prof_clim_cell_index.size):
-        if prof_clim_cell_index[a] != mat_contents['prof_clim_cell_index'][a]:
-            if not (np.isnan(prof_clim_cell_index[a]) and np.isnan(mat_contents['prof_clim_cell_index'][a])):
-                print(prof_clim_cell_index[a])
-                print(mat_contents['prof_clim_cell_index'][a])    
-     
-                print("{}".format(a))
-                ticker = ticker + 1
-                print("--------")
-
-    raise Exception(ticker)
-    """
-
-    # NOTE: importing from matlab the interp -> so we can continue w/ coding rest of pipeline
-    import scipy.io as sio
-    mat_contents = sio.loadmat('/home/sweet/Desktop/ECCO-Insitu-Ian/Matlab-Dependents/TS Climatology/cells.mat')
-    mat_contents['prof_clim_cell_index'] = np.squeeze(mat_contents['prof_clim_cell_index'])
-    mat_contents['prof_clim_cell_index'] = mat_contents['prof_clim_cell_index'] - 1
-    prof_clim_cell_index = mat_contents['prof_clim_cell_index']
     
     # go through each z level in the profile array
     # set the default climatology value to be fillVal (-9999)
@@ -157,31 +116,10 @@ def update_monthly_mean_TS_clim_WOA13v2_on_prepared_profiles(TS_clim_dir, MITpro
     prof_clim_T_temp = prof_clim_T.flatten(order= 'F')
     prof_clim_T_temp[np.where(np.isnan(prof_clim_T_temp))[0]]= fillVal
     prof_clim_T = prof_clim_T_temp.reshape((prof_clim_T.shape), order='F')
-
     
     MITprofs['prof_Tclim'] = prof_clim_T
     MITprofs['prof_Sclim'] = prof_clim_S
-    """
-    # NOTE: final check to make sure prof_clim_T + prof_clim_S are the same as matlab
-    import scipy.io as sio
-    mat_contents = sio.loadmat('/home/sweet/Desktop/ECCO-Insitu-Ian/Matlab-Dependents/TS Climatology/prof_clim_T_array.mat')
 
-    for a in np.arange(32364):
-        for b in np.arange(137):
-            if prof_clim_T[a][b] != mat_contents['prof_clim_T'][a][b]:
-                if (np.isnan(prof_clim_S[a][b]) and (not np.isnan(mat_contents['prof_clim_T'][a][b]))) or (not np.isnan(prof_clim_T[a][b]) and (np.isnan(mat_contents['prof_clim_T'][a][b]))):
-                    print(prof_clim_T[a][b])
-                    print(mat_contents['prof_clim_T'][a][b])
-                    print("{} {}".format(a, b))
-                    print("-------------")
-                
-                if not (np.isnan(prof_clim_T[a][b]) and np.isnan(mat_contents['prof_clim_T'][a][b])):
-                    print(prof_clim_T[a][b])
-                    print(mat_contents['prof_clim_T'][a][b])
-                    print("{} {}".format(a, b))
-                    print("-------------")
-    """
-    
 def main(TS_clim_dir, MITprofs):
 
     print("step 03: update_monthly_mean_TS_clim_WOA13v2_on_prepared_profiles")

@@ -51,15 +51,17 @@ def distmat(xy, varargin):
 
     return dmat, opt
 
-def update_decimate_profiles_subdaily_to_once_daily(run_code, MITprofs):
+def update_decimate_profiles_subdaily_to_once_daily(MITprofs, distance_tolerance, closest_time, method):
     """
     This script decimates profiles with subdaily sampling at the same
     location to once-daily sampling.
 
     Input Parameters:
-        run_code: 
-        20181218_1
-        20181218_2
+
+        distance_tolerance = 5e3        # radius within which profiles are considered to be at the same location [in meters]
+        closest_time = 120000           # HHMMSS: if there is more than one profile per day in a location, choose the one
+                                        # that is closest in time to 'closest time' default is noon 
+        method = 1                      # method 0 or 1
         
         MITprof: a single MITprof object
 
@@ -67,22 +69,6 @@ def update_decimate_profiles_subdaily_to_once_daily(run_code, MITprofs):
         Operates on MITprofs directly 
     """
 
-    # distance_tolerance: radius within which profiles are considered to be at
-    # the same location [in meters]
-    distance_tolerance = 10e3
-
-    # if there is more than one profile per day in a location, choose the one
-    # that is closest in time to 'closest time' default is noon
-    closest_time = 120000 # HHMMSS
-
-    if run_code == '20181218_1':
-        distance_tolerance = 5e3 # meters
-        closest_time = 120000  # noon
-        method = 0
-    if run_code == '20181218_2':
-        distance_tolerance = 5e3 # meters
-        closest_time = 120000  # noon
-        method = 1
 
     deg2rad = np.pi/180    
 
@@ -212,14 +198,14 @@ def update_decimate_profiles_subdaily_to_once_daily(run_code, MITprofs):
     print('Num T and S weight > 0, post')
     print('{:>10} {:>10}'.format(np.sum(MITprofs['prof_Tweight'] > 0), np.sum(MITprofs['prof_Sweight'] > 0)))
 
-def main(run_code, MITprofs):
+def main(MITprofs, distance_tolerance, closest_time, method):
 
     print("step10: update_decimate_profiles_subdaily_to_once_daily")
 
     print('Num T and S weight > 0, pre')
     print('{:>10} {:>10}'.format(np.sum(MITprofs['prof_Tweight'] > 0), np.sum(MITprofs['prof_Sweight'] > 0)))
 
-    update_decimate_profiles_subdaily_to_once_daily(run_code, MITprofs)
+    update_decimate_profiles_subdaily_to_once_daily(MITprofs, distance_tolerance, closest_time, method)
 
 if __name__ == '__main__':
  
@@ -248,5 +234,10 @@ if __name__ == '__main__':
     for keys in MITprofs.keys():
         if ma.isMaskedArray(MITprofs[keys]):
             MITprofs[keys] = MITprofs[keys].filled(np.NaN)
+
+    distance_tolerance = 5e3        # radius within which profiles are considered to be at the same location [in meters]
+    closest_time = 120000           # HHMMSS: if there is more than one profile per day in a location, choose the one
+                                    # that is closest in time to 'closest time' default is noon 
+    method = 1                      # method 0 or 1
     
-    main(run_code, MITprofs)
+    main(MITprofs, distance_tolerance, closest_time, method)

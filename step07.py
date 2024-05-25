@@ -74,7 +74,7 @@ def update_zero_weight_points_on_prepared_profiles(run_code, MITprofs):
 
     Input Parameters:
         run_code:
-        20190126_high_lat
+        adjust
         MITprof: a single MITprof object
 
     Output:
@@ -139,9 +139,8 @@ def update_zero_weight_points_on_prepared_profiles(run_code, MITprofs):
     % plot_map_bad_profiles : 0/1 whether to make a plot of bad profs locations
     """
             
-    if run_code == '20190126_high_lat':
+    if run_code == 'adjust':
 
-        # NOTE: using 0-11 instead of 1-12
         zero_criteria_code = np.arange(1,12)
         
         # don't bother testing high latitude profiles against the
@@ -228,7 +227,6 @@ def update_zero_weight_points_on_prepared_profiles(run_code, MITprofs):
        
         if zero_critera_code_i == 2: # nonzero prof T or S flag
             
-            # ['+++ Profs with nonzero T or S flags']
             ins1 = np.where(MITprofs['prof_Tflag'] > 0)
             MITprofs_new['prof_Tweight'][ins1] = 0    
             zero_T_weight_reason[ins1] = zero_T_weight_reason[ins1] + 2**(zero_critera_code_i - 1)
@@ -575,7 +573,7 @@ def update_zero_weight_points_on_prepared_profiles(run_code, MITprofs):
 
 def main(run_code, MITprofs):
 
-    print("update_zero_weight_points_on_prepared_profiles")
+    print("step07: update_zero_weight_points_on_prepared_profiles")
     update_zero_weight_points_on_prepared_profiles(run_code, MITprofs)
 
 if __name__ == '__main__':

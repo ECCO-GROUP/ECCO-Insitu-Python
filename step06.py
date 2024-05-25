@@ -232,7 +232,7 @@ def sw_ptmp(S, T, P, PR):
 
     return PT
 
-def update_prof_insitu_T_to_potential_T(run_code, MITprofs):
+def update_prof_insitu_T_to_potential_T(MITprofs, replace_missing_S_with_clim_S):
     """
     This script updates the profile insitu temperatures so that they are in
     potential temperature
@@ -247,13 +247,6 @@ def update_prof_insitu_T_to_potential_T(run_code, MITprofs):
 
     # SET INPUT PARAMETERS
     fillVal=-9999
-
-    # by default, do not replace missing salinity values with salinity values
-    # from the climatology
-    replace_missing_S_with_clim_S = 0
-
-    if run_code == '20181202_use_clim_for_missing_S':
-        replace_missing_S_with_clim_S = 1
     
     lats = MITprofs['prof_lat']
     # flatten array and converted all NaN vals to fillval
@@ -316,19 +309,15 @@ def update_prof_insitu_T_to_potential_T(run_code, MITprofs):
     MITprofs['prof_T'] = ptemp
  
     
-def main(run_code, MITprofs):
+def main(MITprofs, replace_missing_S_with_clim_S):
 
     print("step06: update_prof_insitu_T_to_potential_T")
-    update_prof_insitu_T_to_potential_T(run_code, MITprofs)
+    update_prof_insitu_T_to_potential_T(MITprofs, replace_missing_S_with_clim_S)
 
 if __name__ == '__main__':
  
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-r", "--run_code", action= "store",
-                        help = "Run code: 90 or 270" , dest= "run_code",
-                        type = int, required= True)
-    
     parser.add_argument("-m", "--MIT_dir", action= "store",
                     help = "File path to NETCDF files containing MITprofs info." , dest= "MIT_dir",
                     type = str, required= True)
@@ -344,4 +333,6 @@ if __name__ == '__main__':
     for file in nc_files:
         MITprofs = MITprof_read(file, 6)
 
-    main(run_code, MITprofs)
+    replace_missing_S_with_clim_S = 1   # 1 = replace, 0 = do not replace
+    
+    main(MITprofs, replace_missing_S_with_clim_S)

@@ -5,59 +5,96 @@ import netCDF4 as nc
 import xarray as xr
 from scipy.interpolate import griddata
 
-def MITprof_write_to_nc(dest_dir, MITprofs, step):
+def MITprof_write_to_nc(dest_dir, MITprofs, step, basename):
 
     print("Writing NETCDF files")
 
-    df_HHMMSS = xr.DataArray(MITprofs['prof_HHMMSS'], dims = ['iPROF'])
+    df_HHMMSS = xr.DataArray(MITprofs['prof_HHMMSS'], dims = ['iPROF'],                                
+                            attrs=dict(
+                                description = "hour (2 digits), minute (2 digits), second (2 digits)"
+                            ))
     df_HHMMSS.name = 'prof_HHMMSS'
     df_HHMMSS.encoding
 
-    df_YYYYMMDD = xr.DataArray(MITprofs['prof_YYYYMMDD'], dims = ['iPROF'])
+    df_YYYYMMDD = xr.DataArray(MITprofs['prof_YYYYMMDD'], dims = ['iPROF'],
+                            attrs=dict(
+                                description = "year (4 digits), month (2 digits), day (2 digits)"
+                            ))
     df_YYYYMMDD.name = 'prof_YYYYMMDD'
     df_YYYYMMDD.encoding
 
-    df_lat = xr.DataArray(MITprofs['prof_lat'], dims = ['iPROF'])
+    df_lat = xr.DataArray(MITprofs['prof_lat'], dims = ['iPROF'],                                
+                            attrs=dict(
+                                description = "Decimal Degrees, Latitude (degree North)"
+                            ))
     df_lat.name = 'prof_lat'
     df_lat.encoding
 
-    df_lon = xr.DataArray(MITprofs['prof_lon'], dims = ['iPROF'])
+    df_lon = xr.DataArray(MITprofs['prof_lon'], dims = ['iPROF'],                                
+                            attrs=dict(
+                                description = "Decimal Degrees, Longitude (degree East)"
+                            ))
     df_lon.name = 'prof_lon'
     df_lon.encoding
 
+    # NOTE: not populated 
     df_basin = xr.DataArray(MITprofs['prof_basin'], dims = ['iPROF'])
     df_basin.name = 'prof_basin'
     df_basin.encoding
 
-    df_date = xr.DataArray(MITprofs['prof_date'], dims = ['iPROF'])
+    df_date = xr.DataArray(MITprofs['prof_date'], dims = ['iPROF'],                                
+                            attrs=dict(
+                                description = "Julian day since Jan-1-2000"
+                            ))
     df_date.name = 'prof_date'
     df_date.encoding
 
-    df_depth = xr.DataArray(MITprofs['prof_depth'], dims = ['iDEPTH'])
+    df_depth = xr.DataArray(MITprofs['prof_depth'], dims = ['iDEPTH'],
+                            attrs=dict(
+                                units = "me"
+                            ))
     df_depth.name = 'prof_depth'
     df_depth.encoding
 
-    df_descr = xr.DataArray(MITprofs['prof_descr'], dims = ['iPROF', 'iTXT'])
+    df_descr = xr.DataArray(MITprofs['prof_descr'], dims = ['iPROF', 'iTXT'],
+                            attrs=dict(
+                                description = "Information regarding: cast, NODC Cruise ID, Country, Probe_type, Insitute, DB origin"
+                            ))
     df_descr.name = 'prof_descr'
-    df_descr.encoding
 
-    df_point = xr.DataArray(MITprofs['prof_point'], dims = ['iPROF'])
+    df_point = xr.DataArray(MITprofs['prof_point'], dims = ['iPROF'],
+                            attrs=dict(
+                                description = "grid point index (ecco 4g)"
+                            ))
     df_point.name = 'prof_point'
     df_point.encoding
 
-    df_S = xr.DataArray(MITprofs['prof_S'], dims = ['iPROF', 'iDEPTH'])
+    df_S = xr.DataArray(MITprofs['prof_S'], dims = ['iPROF', 'iDEPTH'],
+                            attrs=dict(
+                                units = "psu"
+                            ))
     df_S.name = 'prof_S'
     df_S.encoding
 
-    df_S_flag = xr.DataArray(MITprofs['prof_Sflag'], dims = ['iPROF', 'iDEPTH'])
+    df_S_flag = xr.DataArray(MITprofs['prof_Sflag'], dims = ['iPROF', 'iDEPTH'],
+                             attrs=dict(
+                                description = "flag = i > 0 means test i rejected data."
+                            ))
     df_S_flag.name = 'prof_Sflag'
     df_S_flag.encoding
 
-    df_T = xr.DataArray(MITprofs['prof_T'], dims = ['iPROF', 'iDEPTH'])
+    df_T = xr.DataArray(MITprofs['prof_T'], dims = ['iPROF', 'iDEPTH'],
+                            attrs=dict(
+                                description = "potential temperature",
+                                units = "degree C"
+                            ))
     df_T.name = 'prof_T'
     df_T.encoding
 
-    df_T_flag = xr.DataArray(MITprofs['prof_Tflag'], dims = ['iPROF', 'iDEPTH'])
+    df_T_flag = xr.DataArray(MITprofs['prof_Tflag'], dims = ['iPROF', 'iDEPTH'],
+                             attrs=dict(
+                                description = "flag = i > 0 means test i rejected data."
+                            ))
     df_T_flag.name = 'prof_Tflag'
     df_T_flag.encoding
 
@@ -105,11 +142,17 @@ def MITprof_write_to_nc(dest_dir, MITprofs, step):
             output_DS = xr.merge([df_HHMMSS, df_YYYYMMDD, df_lat, df_lon, df_basin, df_date, df_depth, df_descr, df_point, df_S, df_S_flag, df_T, df_T_flag, 
                                   df_interp_XC11, df_interp_YC11, df_interp_XCNINJ, df_interp_YCNINJ, df_interp_i, df_interp_j, df_interp_weights, df_interp_lon, df_interp_lat])
     if step >= 2:
-        df_bin_id_a = xr.DataArray(MITprofs['prof_bin_id_a'], dims = ['iPROF'])
+        df_bin_id_a = xr.DataArray(MITprofs['prof_bin_id_a'], dims = ['iPROF'],
+                                    attrs=dict(
+                                         description = "bin index (int) A"
+                                     ))
         df_bin_id_a.name = 'prof_bin_id_a'
         df_bin_id_a.encoding
 
-        df_bin_id_b = xr.DataArray(MITprofs['prof_bin_id_b'], dims = ['iPROF'])
+        df_bin_id_b = xr.DataArray(MITprofs['prof_bin_id_b'], dims = ['iPROF'],
+                                    attrs=dict(
+                                         description = "bin index (int) B"
+                                     ))
         df_bin_id_b.name = 'prof_bin_id_b'
         df_bin_id_b.encoding
         if step == 2:
@@ -117,11 +160,19 @@ def MITprof_write_to_nc(dest_dir, MITprofs, step):
                                   df_interp_XC11, df_interp_YC11, df_interp_XCNINJ, df_interp_YCNINJ, df_interp_i, df_interp_j, df_interp_weights, df_interp_lon, df_interp_lat,
                                   df_bin_id_a, df_bin_id_b])
     if step >= 3:
-        df_Tclim = xr.DataArray(MITprofs['prof_Tclim'], dims = ['iPROF', 'iDEPTH'])
+        df_Tclim = xr.DataArray(MITprofs['prof_Tclim'], dims = ['iPROF', 'iDEPTH'],
+                            attrs=dict(
+                                description = "potential temperature",
+                                units = "degree C"
+                            ))
         df_Tclim.name = 'prof_Tclim'
         df_Tclim.encoding
 
-        df_Sclim = xr.DataArray(MITprofs['prof_Sclim'], dims = ['iPROF', 'iDEPTH'])
+        df_Sclim = xr.DataArray(MITprofs['prof_Sclim'], dims = ['iPROF', 'iDEPTH'],
+                            attrs=dict(
+                                description = "salt fool",
+                                units = "S"
+                            ))
         df_Sclim.name = 'prof_Sclim'
         df_Sclim.encoding
         if step == 3:
@@ -130,19 +181,33 @@ def MITprof_write_to_nc(dest_dir, MITprofs, step):
                                   df_bin_id_a, df_bin_id_b,
                                   df_Tclim, df_Sclim])
     if step >= 4:
+
+        # NOTE: not populated
         df_Terr = xr.DataArray(MITprofs['prof_Terr'], dims = ['iPROF', 'iDEPTH'])
         df_Terr.name = 'prof_Terr'
         df_Terr.encoding
 
-        df_Serr = xr.DataArray(MITprofs['prof_Serr'], dims = ['iPROF', 'iDEPTH'])
+        df_Serr = xr.DataArray(MITprofs['prof_Serr'], dims = ['iPROF', 'iDEPTH'],
+                            attrs=dict(
+                                description = "salinity instrumental error",
+                                units = "psu"
+                            ))
         df_Serr.name = 'prof_Serr'
         df_Serr.encoding
 
-        df_Tweight = xr.DataArray(MITprofs['prof_Tweight'], dims = ['iPROF', 'iDEPTH'])
+        df_Tweight = xr.DataArray(MITprofs['prof_Tweight'], dims = ['iPROF', 'iDEPTH'],
+                            attrs=dict(
+                                description = "pot. temp. least-square weight",
+                                units = "(degree C)^-2"
+                            ))
         df_Tweight.name = 'prof_Tweight'
         df_Tweight.encoding
 
-        df_Sweight = xr.DataArray(MITprofs['prof_Sweight'], dims = ['iPROF', 'iDEPTH'])
+        df_Sweight = xr.DataArray(MITprofs['prof_Sweight'], dims = ['iPROF', 'iDEPTH'],
+                                     attrs=dict(
+                                         description = "salinity least-square weight",
+                                         units = "(psu)^-2"
+                                     ))
         df_Sweight.name = 'prof_Sweight'
         df_Sweight.encoding
         if step == 4:
@@ -152,7 +217,10 @@ def MITprof_write_to_nc(dest_dir, MITprofs, step):
                                   df_Tclim, df_Sclim,
                                   df_Terr, df_Serr, df_Tweight, df_Sweight])
     if step >= 5:
-        df_area_gamma = xr.DataArray(MITprofs['prof_area_gamma'], dims = ['iPROF'])
+        df_area_gamma = xr.DataArray(MITprofs['prof_area_gamma'], dims = ['iPROF'],
+                                     attrs=dict(
+                                         description = "scaling factor (real number) applied to the T and S weights"
+                                     ))
         df_area_gamma.name = 'prof_area_gamma'
         df_area_gamma.encoding
         if step == 5 or step == 6:
@@ -162,12 +230,19 @@ def MITprof_write_to_nc(dest_dir, MITprofs, step):
                                   df_Tclim, df_Sclim,
                                   df_Terr, df_Serr, df_Tweight, df_Sweight,
                                   df_area_gamma])
+    
     if step >= 7:
-        df_Tweight_code = xr.DataArray(MITprofs['prof_Tweight_code'], dims = ['iPROF', 'iDEPTH'])
+        df_Tweight_code = xr.DataArray(MITprofs['prof_Tweight_code'], dims = ['iPROF', 'iDEPTH'],
+                            attrs=dict(
+                                description = "code describing why T weight is zero"
+                            ))
         df_Tweight_code.name = 'prof_Tweight_code'
         df_Tweight_code.encoding
 
-        df_Sweight_code = xr.DataArray(MITprofs['prof_Sweight_code'], dims = ['iPROF', 'iDEPTH'])
+        df_Sweight_code = xr.DataArray(MITprofs['prof_Sweight_code'], dims = ['iPROF', 'iDEPTH'],
+                                     attrs=dict(
+                                         description = "Code describing why S weight is zero"
+                                     ))
         df_Sweight_code.name = 'prof_Sweight_code'
         df_Sweight_code.encoding
         if step >=7 :
@@ -186,7 +261,9 @@ def MITprof_write_to_nc(dest_dir, MITprofs, step):
     output_DS.attrs['description'] = 'test file'
 
     # Save to netCDF
-    nc_path = os.path.join(dest_dir, "step_{}.nc".format(step))
+    parts = basename.split('.')
+    name = "{}{}_step_{}_{}.nc".format(parts[0], parts[1], step, parts[2])
+    nc_path = os.path.join(dest_dir, name)
     output_DS.to_netcdf(nc_path, encoding= encoding)
 
     
@@ -227,6 +304,7 @@ def MITprof_read(file, step):
 
     df_depth = dataset.variables['prof_depth'][:]
     MITprofs.update({"prof_depth": df_depth})
+
     #df_depth_f_flag = dataset.variables['prof_depth_wod_flag'][:]
     #df_depth_o_flag = dataset.variables['prof_depth_orig_flag'][:]
     #MITprofs.update({"prof_depth_wod_flag": df_depth_f_flag})
@@ -241,9 +319,10 @@ def MITprof_read(file, step):
     df_S = dataset.variables['prof_S'][:]
     MITprofs.update({"prof_S": df_S})
 
+    # NOTE: not populated
     df_Sestim = dataset.variables['prof_Sestim'][:]
     MITprofs.update({"prof_Sestim": df_Sestim})
-
+    # NOTE: not populated
     df_S_f_flag = dataset.variables['prof_Sflag'][:]   # prof_S_wod_flag
     MITprofs.update({"prof_Sflag": df_S_f_flag}) 
 
@@ -257,7 +336,7 @@ def MITprof_read(file, step):
     MITprofs.update({"prof_T": df_T})
 
     df_Testim = dataset.variables['prof_Testim'][:]
-    MITprofs.update({"prof_Testim": df_Sestim})
+    MITprofs.update({"prof_Testim": df_Testim})
 
     df_T_f_flag = dataset.variables['prof_Tflag'][:]   #  prof_T_wod_flag
     MITprofs.update({"prof_Tflag": df_T_f_flag})       #  prof_Tflag
@@ -1172,9 +1251,13 @@ def intrep_check(xyz, AI, X, Y, Z, lat_vals, lon_vals, step, **kwargs):
         
         if step == 2:
             
-            print("i = {} | test_ind = {} | lat = {} | lon = {}".format(i, test_ind, test_lat, test_lon))
-            print("{} {} {} | {} {} {}".format(X[test_ind], Y[test_ind], Z[test_ind], test_x, test_y, test_z))
-            print("{} {} | {} {}".format(lat_vals[test_ind], lon_vals[test_ind], test_lat, test_lon))
+            print('original (line 1) vs closest (line 2) x,y,z')
+            print("{} {} {}".format(X[test_ind], Y[test_ind], Z[test_ind]))
+            print("{} {} {}".format(test_x, test_y, test_z))
+
+            print('original (line 1) vs closest (line 2) lat lon')
+            print("{} {}".format(test_lat, test_lon))
+            print("{} {}".format(lat_vals[test_ind], lon_vals[test_ind]))
 
             if abs(X[test_ind] - test_x) > 5 or abs(Y[test_ind] - test_y) > 5 or abs(Z[test_ind] - test_z) > 5:
                 raise Exception("Step {} failed check, interp XYZ coordinate difference too big".format(step))
@@ -1182,8 +1265,13 @@ def intrep_check(xyz, AI, X, Y, Z, lat_vals, lon_vals, step, **kwargs):
                 raise Exception("Step {} failed check, interp lon/lat coordinate difference too big".format(step))
         
         if step == 3:
-            print("{} {} {} | {} {} {}".format(X[test_ind], Y[test_ind], Z[test_ind], test_x, test_y, test_z))
-            print("{} {} | {} {}".format(lat_vals[good_clim_ins[test_ind]], lon_vals[good_clim_ins[test_ind]], test_lat, test_lon))
+            print('original (line 1) vs closest (line 2) x,y,z')
+            print("{} {} {}".format(X[test_ind], Y[test_ind], Z[test_ind]))
+            print("{} {} {}".format(test_x, test_y, test_z))
+
+            print('original (line 1) vs closest (line 2) lat lon')
+            print("{} {}".format(test_lat, test_lon))
+            print("{} {}".format(lat_vals[good_clim_ins[test_ind]], lon_vals[good_clim_ins[test_ind]]))
 
             if abs(X[test_ind] - test_x) > 5 or abs(Y[test_ind] - test_y) > 5 or abs(Z[test_ind] - test_z) > 5:
                 raise Exception("Step {} failed check, interp XYZ coordinate difference too big".format(step))

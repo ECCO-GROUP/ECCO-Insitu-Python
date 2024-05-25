@@ -75,7 +75,7 @@ def update_remove_extraneous_depth_levels(MITprofs):
    
 def main(MITprofs):
 
-    print("update_remove_extraneous_depth_levels")
+    print("step09: update_remove_extraneous_depth_levels")
     update_remove_extraneous_depth_levels(MITprofs)
 
 if __name__ == '__main__':

@@ -2,35 +2,56 @@ import argparse
 import os
 import glob
 import csv
-from types import NoneType
 import netCDF4 as nc4
 import datetime as dt
 import numpy as np
 import itertools
 
-def createNETCDF(file, dest_dir, prof_desc, prof_HHMMSS, prof_lat, prof_lon, prof_depth, prof_S, 
+def make_prof_depth(levels):
+
+    val = 0
+    depth = []
+
+    for a in range(levels):
+        if 0 <= a <= 20:
+            val = 5 * a
+        elif 21 <= a <= 36:
+            val = 25 * (a - 20) + 100
+        elif 37 <= a <= 66:
+            val = 50 * (a - 36) + 550
+        elif a >= 67:
+            val = 100 * (a - 66) + 2000
+        depth.append(val)
+
+    return np.array(depth)
+
+def to_julian_date(date):
+    tt = (date - dt.datetime(2000, 1, 1, 12)).total_seconds() / 86400
+    return tt + 2451545.0
+
+def createNETCDF(file, dest_dir, prof_desc, prof_HHMMSS, prof_lat, prof_lon, prof_S, 
                  prof_T, prof_YYMMDD, prof_depth_f_flag, prof_depth_o_flag, 
                  prof_T_f_flag, prof_T_o_flag, prof_S_f_flag, prof_S_o_flag):
+    
 
-    # create new netCDF file for each year - NOTE: change hardcoded CTD tag for when more data flags are added
-    # rename file w: CSVFILENAME_YEAR.nc
+    # create new netCDF file for each year
     filename = os.path.basename(file).split('.csv')
     year = str(prof_YYMMDD[0])[:4]
     output_filename = "{}_{}.nc".format(filename[0], year)
     output_filename_path = os.path.join(dest_dir, output_filename)
     nc = nc4.Dataset(output_filename_path, 'w')
+
+    print("Writing NETCDF file for {}".format(filename))
     
     # Set global attributes 
     # NOTE: Date that is processed, where (directory) of CSV data came from
-    # NOTE: MD5 check - gives you string hash of file
-    # filename that is doing the processing 
-    nc.title = 'test title' # name of org CSV file w/ suffix
-    
+
+    nc.title = "Generated from file: {}".format(os.path.basename(file))
     nc.insitution = 'JPL'
-    nc.source = 'test source' 
-    nc.author = 'test author' # me
+    nc.source = "File path: {}".format(file)
+    nc.author = 'Sweet Zhang'
     nc.date_created = '{0} creation of netcdf file.'.format(dt.datetime.now().strftime("%Y-%m-%d"))
-    nc.summary = 'test summary' # profiles translated # converted_NCEI_profile_data_for_ECCO
+    nc.description = 'Profiles translated via code from: https://github.com/ECCO-GROUP/ECCO-Insitu-Python/tree/main'
 
     # Convert list to np array type
     prof_HHMMSS_np = np.asarray(prof_HHMMSS, dtype= np.int64)
@@ -38,10 +59,10 @@ def createNETCDF(file, dest_dir, prof_desc, prof_HHMMSS, prof_lat, prof_lon, pro
     prof_lat_np = np.asarray(prof_lat, dtype= np.float64)
     prof_lon_np = np.asarray(prof_lon, dtype= np.float64)
     # Multi-dim data
+    # itertools is used to fill uneven lists of list with NaNs so they can be made into one numpy array
     prof_desc_np = np.array(list(itertools.zip_longest(*prof_desc, fillvalue=np.NaN))).T
     prof_S_np= np.array(list(itertools.zip_longest(*prof_S, fillvalue=np.NaN))).T
     prof_T_np = np.array(list(itertools.zip_longest(*prof_T, fillvalue=np.NaN))).T
-    prof_depth_np = np.array(list(itertools.zip_longest(*prof_depth, fillvalue=np.NaN))).T
     prof_depth_f_flag_np = np.array(list(itertools.zip_longest(*prof_depth_f_flag, fillvalue=np.NaN))).T
     prof_depth_o_flag_np = np.array(list(itertools.zip_longest(*prof_depth_o_flag, fillvalue=np.NaN))).T
     prof_T_f_flag_np = np.array(list(itertools.zip_longest(*prof_T_f_flag, fillvalue=np.NaN))).T
@@ -49,151 +70,162 @@ def createNETCDF(file, dest_dir, prof_desc, prof_HHMMSS, prof_lat, prof_lon, pro
     prof_S_f_flag_np = np.array(list(itertools.zip_longest(*prof_S_f_flag, fillvalue=np.NaN))).T
     prof_S_o_flag_np = np.array(list(itertools.zip_longest(*prof_S_o_flag, fillvalue=np.NaN))).T
     
-    # Create dimensions for NETCDF file NOTE: can create unlimited dim, can be appended to ????????
-    # Find dim for multi-dim data
+    # Create dimensions for NETCDF file
     x, y = prof_T_np.shape
-    one_dim_size = nc.createDimension('one_dim', len(prof_HHMMSS_np)) 
-    multi_dim_size_x = nc.createDimension('dim_x', x)
-    multi_dim_size_y = nc.createDimension('dim_y', y)
+    iPROF = nc.createDimension('iPROF', x)
+    iDEPTH = nc.createDimension('iDEPTH', y)
 
     # Create NETCDF variables
-    prof_HHMMSS_var = nc.createVariable('prof_HHMMSS', np.int64, 'one_dim')
+    prof_HHMMSS_var = nc.createVariable('prof_HHMMSS', np.int64, 'iPROF')
     prof_HHMMSS_var.units = 'Hour, Mins, Seconds' 
     prof_HHMMSS_var[:] = prof_HHMMSS_np
 
-    prof_YYMMDD_var = nc.createVariable('prof_YYYYMMDD', np.int64, 'one_dim')
+    prof_YYMMDD_var = nc.createVariable('prof_YYYYMMDD', np.int64, 'iPROF')
     prof_YYMMDD_var.units = 'Year, Month, Day'
     prof_YYMMDD_var[:] = prof_YYMMDD_np
     
-    prof_lat_var = nc.createVariable('prof_lat', np.float64, 'one_dim')
-    prof_lat_var.units = 'Decimal Degrees' # NOTE: no error checking for this parem
+    prof_lat_var = nc.createVariable('prof_lat', np.float64, 'iPROF')
+    prof_lat_var.long_name = "Latitude (degree North)"
+    prof_lat_var.units = 'Decimal Degrees' 
     prof_lat_var[:] = prof_lat_np
 
-    prof_lon_var = nc.createVariable('prof_lon', np.float64, 'one_dim')
-    prof_lon_var.units = 'Decimal Degrees'# NOTE: no error checking for this parem 
+    prof_lon_var = nc.createVariable('prof_lon', np.float64, 'iPROF')
+    prof_lon_var.long_name = "Longitude (degree East)"
+    prof_lon_var.units = 'Decimal Degrees'
     prof_lon_var[:] = prof_lon_np
+    
+    # Make prof depth arr
+    prof_depth_var = nc.createVariable('prof_depth', np.float64, 'iDEPTH')
+    prof_depth_var.long_name = 'depth'
+    prof_depth_var.units = 'me'
+    prof_depth_var[:] = make_prof_depth(y)
+
+    # make julian day parem
+    prof_date = nc.createVariable('prof_date', np.float64, 'iPROF')
+    prof_date.long_name = "Julian day since Jan 1, 2000"
+    prof_date.units = 'N/A'
+
+    julian = []
+    for date in prof_YYMMDD:
+        year = date // 10000
+        month = (date // 100) % 100
+        day = date % 100
+        date = dt.datetime(year, month, day)
+        julian.append(to_julian_date(date))
+
+    prof_date[:] = np.array(julian)
 
     # Create var - multi dim
     time_x, time_y = prof_desc_np.shape
-    multi_dim_time_x= nc.createDimension('dim_xt', time_x)
-    multi_dim_time_y= nc.createDimension('dim_yd', time_y)
-    prof_desc_var = nc.createVariable('prof_descr', 'S4', ('dim_xt', 'dim_yd'))
+    multi_dim_time_y = nc.createDimension('iTXT', time_y)
+    prof_desc_var = nc.createVariable('prof_descr', 'S1', ('iPROF', 'iTXT'))
+    prof_desc_var.long_name = "Information regarding: cast, NODC Cruise ID, Country, Probe_type, Insitute, DB origin"
     prof_desc_var[:] = prof_desc_np
 
-    prof_S_var = nc.createVariable('prof_S', np.float64, ('dim_x', 'dim_y'))
-    prof_S_var.units = 'N/A'
+    prof_S_var = nc.createVariable('prof_S', np.float64, ('iPROF', 'iDEPTH'))
+    prof_S_var.long_name = "salinity"
+    prof_S_var.units = 'psu'
     prof_S_var[:] = prof_S_np
 
-    prof_T_var = nc.createVariable('prof_T', np.float64, ('dim_x', 'dim_y'))
-    prof_T_var.units = 'Degree C'
+    prof_T_var = nc.createVariable('prof_T', np.float64, ('iPROF', 'iDEPTH'))
+    prof_T_var.long_name = 'potential temperature'
+    prof_T_var.units = 'degree C'
     prof_T_var[:] = prof_T_np
 
-    prof_depth_var = nc.createVariable('prof_depth', np.float64, ('dim_x', 'dim_y'))
-    prof_depth_var.units = 'm'
-    prof_depth_var[:] = prof_depth_np
-
-    prof_depth_f_flag_var = nc.createVariable('prof_depth_wod_flag', np.float64, ('dim_x', 'dim_y'))
+    prof_depth_f_flag_var = nc.createVariable('prof_depth_wod_flag', np.float64, ('iPROF', 'iDEPTH'))
     prof_depth_f_flag_var.units = 'N/A'
     prof_depth_f_flag_var[:] = prof_depth_f_flag_np
 
-    prof_depth_o_flag_var = nc.createVariable('prof_depth_orig_flag', np.float64, ('dim_x', 'dim_y'))
+    prof_depth_o_flag_var = nc.createVariable('prof_depth_orig_flag', np.float64, ('iPROF', 'iDEPTH'))
     prof_depth_o_flag_var.units = 'N/A'
     prof_depth_o_flag_var[:] = prof_depth_o_flag_np
 
-    prof_T_f_flag_var = nc.createVariable('prof_T_wod_flag', np.float64, ('dim_x', 'dim_y'))
+    prof_T_f_flag_var = nc.createVariable('prof_T_wod_flag', np.float64, ('iPROF', 'iDEPTH'))
     prof_T_f_flag_var.units = 'N/A'
     prof_T_f_flag_var[:] = prof_T_f_flag_np
 
-    prof_T_o_flag_var = nc.createVariable('prof_T_orig_flag', np.float64, ('dim_x', 'dim_y'))
+    prof_T_o_flag_var = nc.createVariable('prof_T_orig_flag', np.float64, ('iPROF', 'iDEPTH'))
     prof_T_o_flag_var.units = 'N/A'
     prof_T_o_flag_var[:] =  prof_T_o_flag_np
 
-    prof_S_f_flag_var = nc.createVariable('prof_S_wod_flag', np.float64, ('dim_x', 'dim_y'))
+    prof_S_f_flag_var = nc.createVariable('prof_S_wod_flag', np.float64, ('iPROF', 'iDEPTH'))
     prof_S_f_flag_var.units = 'PSS'
     prof_S_f_flag_var[:] = prof_S_f_flag_np
 
-    prof_S_o_flag_var = nc.createVariable('prof_S_orig_flag', np.float64, ('dim_x', 'dim_y'))
+    prof_S_o_flag_var = nc.createVariable('prof_S_orig_flag', np.float64, ('iPROF', 'iDEPTH'))
     prof_S_o_flag_var.units = 'N/A'
     prof_S_o_flag_var[:] = prof_S_o_flag_np
 
+    # =======================================================================================
+    # NOTE: empty info for rest of pipeline, maybe figure out better merge later 
+    arr_zeros = np.zeros(len(prof_HHMMSS_np))
+
+    # NOTE: field is not populated in pipeline
+    prof_basin = nc.createVariable('prof_basin', np.float64, 'iPROF')
+    prof_basin.long_name = "ocean basin index (ecco 4g)"
+    prof_basin.units = 'N/A'
+    prof_basin[:] = arr_zeros
+
+    prof_interp_XC11 = nc.createVariable('prof_interp_XC11', np.float64, 'iPROF')
+    prof_interp_XC11[:] = arr_zeros
+
+    prof_interp_XCNINJ = nc.createVariable('prof_interp_XCNINJ', np.float64, 'iPROF')
+    prof_interp_XCNINJ[:] = arr_zeros
+
+    prof_interp_YC11 = nc.createVariable('prof_interp_YC11', np.float64, 'iPROF')
+    prof_interp_YC11[:] = arr_zeros
+
+    prof_interp_YCNINJ = nc.createVariable('prof_interp_YCNINJ', np.float64, 'iPROF')
+    prof_interp_YCNINJ[:] = arr_zeros
+
+    prof_point = nc.createVariable('prof_point', np.float64, 'iPROF')
+    prof_point.long_name = "grid point index (ecco 4g)"
+    prof_point[:] = arr_zeros
+
+    # Serr, Sestim, Sflag, Sweight
+    arr_zeros_2d = np.zeros(prof_T_np.shape)
+    prof_Serr = nc.createVariable('prof_Serr', np.float64, ('iPROF', 'iDEPTH'))
+    prof_Serr.long_name = "salinity instrumental error"
+    prof_Serr.units = 'psu'
+    prof_Serr[:] = arr_zeros_2d
+
+    prof_Sestim = nc.createVariable('prof_Sestim', np.float64, ('iPROF', 'iDEPTH'))
+    prof_Sestim.long_name = "salinity estimate (e.g. from atlas)"
+    prof_Sestim.units = 'psu'
+    prof_Sestim[:] = arr_zeros_2d
+
+    # NOTE: not populated 
+    prof_Sflag = nc.createVariable('prof_Sflag', np.float64, ('iPROF', 'iDEPTH'))
+    prof_Sflag[:] = arr_zeros_2d
+
+    prof_Sweight = nc.createVariable('prof_Sweight', np.float64, ('iPROF', 'iDEPTH'))
+    prof_Sweight.long_name = "salinity least-square weight"
+    prof_Sweight.units = '(psu)^-2'
+    prof_Sweight[:] = arr_zeros_2d
+
+    # T
+    prof_Terr = nc.createVariable('prof_Terr', np.float64, ('iPROF', 'iDEPTH'))
+    prof_Terr.long_name = "pot. temp. instrumental error"
+    prof_Terr.units = 'degree C'
+    prof_Terr[:] = arr_zeros_2d
+
+    prof_Testim = nc.createVariable('prof_Testim', np.float64, ('iPROF', 'iDEPTH'))
+    prof_Testim = "pot. temp. estimate (e.g. from atlas)"
+    prof_Testim = "degree C"
+    prof_Testim[:] = arr_zeros_2d
+
+    prof_Tflag = nc.createVariable('prof_Tflag', np.float64, ('iPROF', 'iDEPTH'))
+    prof_Tflag[:] = arr_zeros_2d
+
+    prof_Tweight = nc.createVariable('prof_Tweight', np.float64, ('iPROF', 'iDEPTH'))
+    prof_Tweight.long_name = "pot. temp. least-square weight"
+    prof_Tweight.unit = '(degree C)^-2'
+    prof_Tweight[:] = arr_zeros_2d
+
     nc.close()
 
-"""
-MATLAB CODE NOTES - CSV to WOD13
-parse_wod13_csv_v03 -> crunch_through_wod_lines -> parse_wod_profile
-Takes CSV files and converts into WOD13 matlab files
-    A. parse_wod13_csv_v03
-    - gets csv files, asks user if they want to iterate through all files
-    - uses time (tic/toc funcs) to save WOD13.m files in order to figure out if
-    there are any intermediate files to process
-    - calls crunch_through_wod_lines(wod_text, ...
-                start_i, save_freq, debug);
-    - saves file w/ timestamps (tic/toc)
-
-    B. crunch_through_wod_lines
-    - inits WOD prof structure some w/ -9999 values 
-    - looks for certain markers in CSV file to indicate one profile 
-    - calls parse_wod_profile(wod_text_subset, debug)
-    - saves info from parse_wod_profile into WOD prof structure
-
-    C. parse_wod_profile
-    - pulls out information so WOD13 structure can be init
-
-MATLAB CODE NOTES - WOD13 to NETCDF
-transform_WOD13prof_to_MITprof -> make_wod13_cell_centers
-write_profile_structure_to_netcdf
-
-    A. transform_WOD13prof_to_MITprof
-    - reads all WODprofs files, gets unique years, build big array
-    for every year
-    - pull out info 
-
-    B. write_profile_structure_to_netcdf
-    - checks for existence of fields, writes them to NETCDF
-"""
-"""
-MIT_PROF STRUCT NETCDF FILE 
-
-- prof_basin          Added later
-prof_depth          Good if all files have standard depths
-prof_data - NEED JULIAN DAY
-- prof_descr          CAST_12245790
-                    NODC_Cruise_ID GB-10536     
-                    METADATA
-                    COUNTRY
-                    ACCESSION NUMBER  
-
-prof_HHMMSS         Good
-- prof_interp_XC11    Added later, populated w/ empty???
-- prof_XCNINJ         Added later, or not 
-- prof_YC11           Added later, 
-- prof_YCNINJ         Added later, 
-prof_lat            Good
-prof_lon            Good
-- prof_point          Added later, 
-prof_S              Good
-- prof_Serr           Added later, 
-- prof_Sestim         Added later, 
-- prof_Sweight        Added later, 
-prof_T              
-- prof_Terr           Added later, 
-- prof_Testim         Added later, 
-- prof_Tweight        Added later, 
- prof_YYYYMMDD       Good
-
-- prof_depth_wod_flag  
-- prof_T_wod_flag       
-- prof_S_wod_flag       (named prof_Sflag in thingy)
-
-- prof_depth_orig_flag  (npp,1:nd) = profile.depth_orig_flag;
-- prof_T_orig_flag      (npp,1:nd) = profile.T_orig_flag;
-- prof_S_orig_flag      (npp,1:nd) = profile.S_orig_flag;
-? WODprof.file_lines(npp,:) = [station_start(num_stations) station_end(num_stations)];
-- prof_instruments
-
-"""
 def parse_row_info(row, profflag_found, unique_years, foundNewYear, foundFirstProfile, one_prof_desc, one_prof_HHMMSS, one_prof_lat, one_prof_lon, 
-                   one_prof_depth, one_prof_S, one_prof_T, one_prof_YYMMDD, one_prof_depth_f_flag, one_prof_depth_o_flag,
+                   one_prof_S, one_prof_T, one_prof_YYMMDD, one_prof_depth_f_flag, one_prof_depth_o_flag,
                    one_prof_T_f_flag, one_prof_T_o_flag, one_prof_S_f_flag, one_prof_S_o_flag):
     
     # Parse description parem
@@ -207,6 +239,8 @@ def parse_row_info(row, profflag_found, unique_years, foundNewYear, foundFirstPr
         one_prof_desc.append("PROBE_TYPE: {}".format(row[2].strip()))
     if(row[0].strip() == "Institute"):
         one_prof_desc.append("INSTITUTE: {}".format(row[2].strip()))
+    if(row[0].strip() == "Database origin"):
+        one_prof_desc.append("DATABASE ORGIN: {}".format(row[4].strip()))
         
     # Parse time parem
     if row[0].strip() == 'Time':
@@ -258,12 +292,6 @@ def parse_row_info(row, profflag_found, unique_years, foundNewYear, foundFirstPr
         one_prof_lat = float(row[2])
               
     if profflag_found == True:
-        # NOTE: do we append prof_flag?
-        # Append Depth, F, O
-        try:
-            one_prof_depth.append(float(row[1]))
-        except Exception as e:
-            one_prof_depth.append(np.NaN)
         try: 
             one_prof_depth_f_flag.append(float(row[2]))
         except Exception as e:
@@ -327,7 +355,6 @@ def csv_processing(dest_dir, input_dir):
         prof_desc = []
         prof_lat = [] 
         prof_lon = []
-        prof_depth = []
         prof_S = []
         prof_T = []
         prof_YYMMDD = []
@@ -357,7 +384,6 @@ def csv_processing(dest_dir, input_dir):
                         one_prof_YYMMDD = None
                         one_prof_lat = None
                         one_prof_lon = None
-                        one_prof_depth = [] 
                         one_prof_desc = []
                         one_prof_S = [] 
                         one_prof_T = [] 
@@ -391,6 +417,7 @@ def csv_processing(dest_dir, input_dir):
                             dt.datetime.strptime(date_time_combined, '%Y%m%d%H%M%S')
                         except ValueError as e:
                             valid_profile_data = False
+                            textfile.write("Invalid profile data - datetime (YYYYMMDDHHMMSS) {} invalid {}\n".format(date_time_combined, line_num))
                         
                         # Check if lon is b/w -180 and +180
                         if one_prof_lon > 180:
@@ -398,9 +425,11 @@ def csv_processing(dest_dir, input_dir):
                         
                         if one_prof_lon < -180 or one_prof_lon > 180:
                             valid_profile_data = False
+                            textfile.write("Invalid profile data - long value {} out of range {}\n".format(one_prof_lon, line_num))
                         
                         if one_prof_lat < -90 or one_prof_lat > 90:
                             valid_profile_data = False
+                            textfile.write("Invalid profile data - lat value {} out of range {}\n".format(one_prof_lat, line_num))
 
                         if one_prof_HHMMSS != None and valid_profile_data == True:    
 
@@ -411,7 +440,6 @@ def csv_processing(dest_dir, input_dir):
                             prof_lon.append(one_prof_lon)
                             prof_S.append(one_prof_S)
                             prof_T.append(one_prof_T)
-                            prof_depth.append(one_prof_depth)
                             prof_depth_f_flag.append(one_prof_depth_f_flag)
                             prof_depth_o_flag.append(one_prof_depth_o_flag) 
                             prof_T_f_flag.append(one_prof_T_f_flag)
@@ -518,7 +546,6 @@ def csv_processing(dest_dir, input_dir):
                                 if salinity_org != '1' and missing_salinity == False:
                                     valid_profile_data = False
                             else:
-                                # NOTE: textfile
                                 textfile.write("Unknow Org Flag at line: {}\n".format(line_num))
                             
                             if valid_profile_data == False:
@@ -574,7 +601,7 @@ def csv_processing(dest_dir, input_dir):
                         if row[3].strip() != 'decimal degrees':
                             valid_profile_data = False
                             textfile.write("Invalid profile data - lon/lat units are false {}\n".format(line_num))
-                    
+
                     # Check if Originators flag exists
                     # NOTE INFO LINK: https://www.nodc.noaa.gov/OC5/WOD/CODES/s_96_origflagset.html
                     if row[0].strip() == 'Originators flag set to use' and row[3].strip() == 'WOD code':
@@ -623,12 +650,12 @@ def csv_processing(dest_dir, input_dir):
                     if startOfNewProfile == True and valid_profile_data == True: 
 
                         foundNewYear, foundFirstProfile, one_prof_lon, one_prof_lat, one_prof_HHMMSS, one_prof_YYMMDD = parse_row_info(row, profflag_found, unique_years, foundNewYear, foundFirstProfile, one_prof_desc, one_prof_HHMMSS, one_prof_lat, one_prof_lon, 
-                                                                                                                                    one_prof_depth, one_prof_S, one_prof_T, one_prof_YYMMDD, one_prof_depth_f_flag, one_prof_depth_o_flag,
+                                                                                                                                     one_prof_S, one_prof_T, one_prof_YYMMDD, one_prof_depth_f_flag, one_prof_depth_o_flag,
                                                                                                                                         one_prof_T_f_flag, one_prof_T_o_flag, one_prof_S_f_flag, one_prof_S_o_flag)
                     # Create new NETCDF file if we have found new year                                                              
                     if foundNewYear == True and foundFirstProfile == False:
                         # Create prev years NETCDF file
-                        createNETCDF(file, dest_dir, prof_desc, prof_HHMMSS, prof_lat, prof_lon, prof_depth, prof_S, prof_T, prof_YYMMDD, 
+                        createNETCDF(file, dest_dir, prof_desc, prof_HHMMSS, prof_lat, prof_lon, prof_S, prof_T, prof_YYMMDD, 
                                         prof_depth_f_flag, prof_depth_o_flag, prof_T_f_flag, prof_T_o_flag, 
                                         prof_S_f_flag, prof_S_o_flag)
                         
@@ -636,7 +663,6 @@ def csv_processing(dest_dir, input_dir):
                         prof_HHMMSS = []
                         prof_lat = [] 
                         prof_lon = []
-                        prof_depth = []
                         prof_S = []
                         prof_T = []
                         prof_YYMMDD = []
@@ -658,7 +684,6 @@ def csv_processing(dest_dir, input_dir):
         prof_lon.append(one_prof_lon)
         prof_S.append(one_prof_S)
         prof_T.append(one_prof_T)
-        prof_depth.append(one_prof_depth)   
         prof_depth_f_flag.append(one_prof_depth_f_flag)
         prof_depth_o_flag.append(one_prof_depth_o_flag) 
         prof_T_f_flag.append(one_prof_T_f_flag)
@@ -667,7 +692,7 @@ def csv_processing(dest_dir, input_dir):
         prof_S_o_flag.append(one_prof_S_o_flag)    
         prof_desc.append(one_prof_desc)  
 
-    createNETCDF(file, dest_dir, prof_desc, prof_HHMMSS, prof_lat, prof_lon, prof_depth, prof_S, prof_T, prof_YYMMDD, 
+    createNETCDF(file, dest_dir, prof_desc, prof_HHMMSS, prof_lat, prof_lon, prof_S, prof_T, prof_YYMMDD, 
                 prof_depth_f_flag, prof_depth_o_flag, prof_T_f_flag, prof_T_o_flag, 
                 prof_S_f_flag, prof_S_o_flag)
 
@@ -677,7 +702,6 @@ def main(dest_dir, input_dir):
 
 if __name__ == '__main__':
 
-    """
     parser = argparse.ArgumentParser()
 
     parser.add_argument("-d", "--dest_dir", action= "store",
@@ -693,11 +717,5 @@ if __name__ == '__main__':
 
     dest_dir = args.dest_dir
     input_dir = args.input_dir
-    """
-    #input_dir = "/home/sweet/Desktop/ECCO-Insitu-Ian/CSV_preprocessing_Python/Small Dataset/Data"    
-    #dest_dir = "/home/sweet/Desktop/ECCO-Insitu-Ian/CSV_preprocessing_Python/Small Dataset/Output"
-
-    input_dir = "/home/sweet/Desktop/ECCO-Insitu-Ian/CSV_preprocessing_Python/Big Dataset/Data"
-    dest_dir = "/home/sweet/Desktop/ECCO-Insitu-Ian/CSV_preprocessing_Python/Big Dataset/Output"
-    csv_processing(dest_dir, input_dir)
-    #main(dest_dir, input_dir)
+  
+    main(dest_dir, input_dir)

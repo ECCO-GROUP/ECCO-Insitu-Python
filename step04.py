@@ -3,7 +3,7 @@ import glob
 import os
 import numpy as np
 from scipy.interpolate import griddata
-from tools import MITprof_read, intrep_check, load_llc270_grid, load_llc90_grid, sph2cart
+from tools import MITprof_read, intrep_check, load_llc90_grid, sph2cart
 from scipy import interpolate
 
 
@@ -26,7 +26,7 @@ def interp_2D_to_arbitrary_z_levels(orig_data_xz, orig_z_centers, new_z_centers)
     new_z_centers = new_z_centers.filled(np.nan)
     # Create interpolation function for all rows of orig_data_xz simultaneously
     interp_func = interpolate.interp1d(orig_z_centers, orig_data_xz.T, kind='linear', bounds_error=False, fill_value=np.nan)
-
+   
     # Interpolate at new_z_centers
     new_data_xz = interp_func(new_z_centers)
 
@@ -67,59 +67,22 @@ def make_llc90_z_map(z_top_90, z_bot_90):
     
     return z_map
 
-def update_sigmaTS_on_prepared_profiles(run_code, MITprofs, grid_dir, sigma_dir):
+def update_sigmaTS_on_prepared_profiles(MITprofs, grid_dir, sigma_dir, respect_existing_zero_weights, new_S_floor, new_T_floor):
     """
     Update MITprof objects with new T and S uncertainty fields 
     Input Parameters:
-        run_code:
-        20190126_do_not_respect_existing_weights
-        20190126_respect_existing_weights
-        20181202_do_not_respect_existing_weights
-        20181202_respect_existing_weights
         
         MITprof: a single MITprof object
         grid_dir: directory path of grid to be read in
         sigma_dir: Path to Salt_sigma_smoothed_method_02_masked_merged_capped_extrapolated.bin and Theta_sigma_smoothed_method_02_masked_merged_capped_extrapolated.bin
+        respect_existing_zero_weights
+        **kwargs -> optional parem for setting new_S_floor
         
     Output:
         Operates on MITprofs directly 
     """
 
-    # new_T_floor, new_S_floor.  If greater than zero, ensure that the 
-    # minimum uncertainty in T and S are at least as high as new_T_floor,
-    # new_S_floor
-    new_T_floor = 0
-    new_S_floor = 0
-            
-    # respect_existing_zero_weights:  
-    #   0 = no
-    #   1 = yes
-    if run_code == '20190126_do_not_respect_existing_weights':
-        # use if the MITprof fields
-        # do not have some zero weights
-        respect_existing_zero_weights = 0
-        new_S_floor = 0.005
-        grid_code = 90
-        
-                  
-    if run_code == '20190126_respect_existing_weights':
-        # use if the MITprof fields
-        # already have some zero weights
-        respect_existing_zero_weights = 1
-        new_S_floor = 0.005
-            
-    if run_code == '20181202_do_not_respect_existing_weights':
-        # use if the MITprof fields
-        # do not have some zero weights
-        respect_existing_zero_weights = 0
-            
-    if run_code == '20181202_respect_existing_weights':
-        #  use if the MITprof fields
-        # already have some zero weights
-        respect_existing_zero_weights = 1
-    
-    if grid_code == 90:
-        wet_ins_90_k, X_90, Y_90, Z_90, AI_90, z_cen_90, lat_90, lon_90 = load_llc90_grid(grid_dir, 4)
+    wet_ins_90_k, X_90, Y_90, Z_90, AI_90, z_cen_90, lat_90, lon_90 = load_llc90_grid(grid_dir, 4)
 
     # salt
     sigma_S_path = os.path.join(sigma_dir, 'Salt_sigma_smoothed_method_02_masked_merged_capped_extrapolated.bin')
@@ -200,49 +163,29 @@ def update_sigmaTS_on_prepared_profiles(run_code, MITprofs, grid_dir, sigma_dir)
     
     # SET WEIGHTS TO ZERO IF THEY CAME WITH ZERO.
     if respect_existing_zero_weights:
-        raise Exception("translated but untested")
-        # JUST FOR ACCOUNTING 
-        num_zero_Tweights = np.sum(MITprofs['prof_Tweight'] == 0)
 
         # FIND DATA WITH ZERO WEIGHT
         zero_orig_weight_ins= np.where(orig_profTweight == 0)[0]
   
-        # ['prof Tweight == 0  ' num2str(length(zero_orig_weight_ins))]
         # APPLY ZEROS TO WEIGHTS
         MITprofs['prof_Tweight'][zero_orig_weight_ins] = 0
-
-        num_zero_Tweights_2 = np.sum(MITprof.prof_Tweight == 0)
-        
-        # ['num zero T weights: before/after orig zero weight mask']
-        # [num_zero_Tweights num_zero_Tweights_2]
         
         if 'prof_S' in MITprofs:
-            num_zero_Sweights = np.sum(MITprof['prof_Sweight'] == 0)
-            zero_orig_weight_ins= np.where(orig_profSweight == 0)[0]
-            
-            #['prof Sweight == 0  ' num2str(length(zero_orig_weight_ins))]
+            zero_orig_weight_ins= np.where(orig_profSweight == 0)[0]     
             # APPLY ZEROS TO WEIGHTS
-            MITprof['prof_Sweight'][zero_orig_weight_ins] = 0
-            num_zero_Sweights_2 = np.sum(MITprof.prof_Sweight == 0)
-            
-            #['num zero S weights: before/after orig zero weight mask']
-            #[num_zero_Sweights num_zero_Sweights_2]
+            MITprofs['prof_Sweight'][zero_orig_weight_ins] = 0
 
     else:
         print("STEP 4: not respecting the zero weights of the original profiles")
     
-def main(run_code, MITprofs, grid_dir, sigma_dir):
+def main(MITprofs, grid_dir, sigma_dir, respect_existing_zero_weights, new_S_floor, new_T_floor):
 
     print("step 04: update_sigmaTS_on_prepared_profiles")
-    update_sigmaTS_on_prepared_profiles(run_code, MITprofs, grid_dir, sigma_dir)
+    update_sigmaTS_on_prepared_profiles(MITprofs, grid_dir, sigma_dir, respect_existing_zero_weights, new_S_floor, new_T_floor)
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-
-    parser.add_argument("-r", "--run_code", action= "store",
-                        help = "Run code: 90 or 270" , dest= "run_code",
-                        type = int, required= True)
 
     parser.add_argument("-g", "--grid_dir", action= "store",
                         help = "File path to 90/270 grids" , dest= "grid_dir",
@@ -259,7 +202,6 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    run_code = args.run_code
     grid_dir = args.grid_dir
     MITprofs_fp = args.MIT_dir
     sigma_dir = args.sigma_dir
@@ -270,4 +212,8 @@ if __name__ == '__main__':
     for file in nc_files:
         MITprofs = MITprof_read(file, 4)
 
-    main(run_code, MITprofs, grid_dir, sigma_dir)
+    respect_existing_zero_weights = 0   # 0 = no, 1 = yes
+    new_S_floor = 0.005                 # set this to zero if S_floor is unused 
+    new_T_floor = 0                     # set this to zero if T_floor is unused 
+
+    main(MITprofs, grid_dir, sigma_dir, respect_existing_zero_weights, new_S_floor, new_T_floor)

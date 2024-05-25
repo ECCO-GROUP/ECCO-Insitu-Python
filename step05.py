@@ -5,35 +5,22 @@ import os
 import numpy as np
 from tools import MITprof_read, load_llc270_grid, load_llc90_grid
 
-def update_gamma_factor_on_prepared_profiles(run_code, MITprofs, grid_dir):
+def update_gamma_factor_on_prepared_profiles(MITprofs, grid_dir, apply_gamma_factor, llcN):
     """
     Updates the MITprof profiles with a new sigma based 
     on whether we are applying or removing the 'gamma' factor 
     
     Input Parameters:
         run_code:
-        20181202_apply_gamma
-        20190125_remove_gamma
-        
+
+        llcN: corresponds to grid used
+        apply_gamma_factor: 0 to remove, 1 to apply gamma to sigma
         MITprof: a single MITprof object
         grid_dir: directory path of grid to be read in
 
     Output:
         Operates on MITprofs directly 
     """
-            
-    # ----  apply_gamma_factor  ----- 
-    #   0 = remove gamma factor from sigma
-    #   1 = apply gamma to sigma
-    #   gamma factor is factor 1/sqrt(alpha)
-    #   where alpha = area/max(area) of the grid cell area in which this profile is found.
-    if run_code == '20181202_apply_gamma': 
-        apply_gamma_factor = 1 # use the gamma or not.
-        llcN = 90
-
-    elif run_code == '20190125_remove_gamma':
-        apply_gamma_factor = 0
-        llcN = 90
 
     #  load the RAC field only if we are applying a gamma factor
     #  when we remove a gamma factor the gamma value is already stored in the
@@ -83,18 +70,14 @@ def update_gamma_factor_on_prepared_profiles(run_code, MITprofs, grid_dir):
     if 'prof_S' in MITprofs:
         MITprofs['prof_Sweight'] = tmpS
     
-def main(run_code, MITprofs, grid_dir):
+def main(MITprofs, grid_dir, apply_gamma_factor, llcN):
     
     print("step05: update_gamma_factor_on_prepared_profiles")
-    update_gamma_factor_on_prepared_profiles(run_code, MITprofs, grid_dir)
+    update_gamma_factor_on_prepared_profiles(MITprofs, grid_dir, apply_gamma_factor, llcN)
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-
-    parser.add_argument("-r", "--run_code", action= "store",
-                        help = "Run code: 90 or 270" , dest= "run_code",
-                        type = int, required= True)
 
     parser.add_argument("-g", "--grid_dir", action= "store",
                         help = "File path to 90/270 grids" , dest= "grid_dir",
@@ -107,7 +90,6 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    run_code = args.run_code
     grid_dir = args.grid_dir
     MITprofs_fp = args.MIT_dir
 
@@ -117,4 +99,9 @@ if __name__ == '__main__':
     for file in nc_files:
         MITprofs = MITprof_read(file, 5)
 
-    main(run_code, MITprofs, grid_dir)
+    llcN = 90
+    apply_gamma_factor = 1          #   0 = remove gamma factor from sigma, 1 = apply gamma to sigma
+                                    #   gamma factor is factor 1/sqrt(alpha), where alpha = area/max(area) of the grid cell area in which this profile is found.
+
+
+    main(MITprofs, grid_dir, apply_gamma_factor, llcN)

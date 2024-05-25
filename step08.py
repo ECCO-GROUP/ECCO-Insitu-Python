@@ -159,7 +159,7 @@ def update_remove_zero_T_S_weighted_profiles_from_MITprof(MITprofs):
         
 def main(MITprofs):
 
-    print("update_remove_zero_T_S_weighted_profiles_from_MITprof")
+    print("step08: update_remove_zero_T_S_weighted_profiles_from_MITprof")
     update_remove_zero_T_S_weighted_profiles_from_MITprof(MITprofs)
 
 if __name__ == '__main__':

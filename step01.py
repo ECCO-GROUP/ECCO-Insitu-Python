@@ -163,35 +163,20 @@ def get_tile_point_llc_ian(lon_llc, lat_llc, ni, nj, MITprof):
 
     return MITprof
 
-def update_prof_and_tile_points_on_profiles(run_code, MITprof, grid_dir):
+def update_prof_and_tile_points_on_profiles(MITprof, grid_dir, llcN, wet_or_all):
     """
     This script updates the prof_points and tile interpolation points
     so that the MITgcm knows which grid points to use for the cost function
 
     Input Parameters:
-        run_code: either 90 or 270, tells program which grid to read in
+        llcN: which grid to use, 90 or 270
+        wet_or_all: 0 = interpolated to nearest wet point, 1 = interpolated all points, regardless of wet or dry
         MITprof: a single MITprof object
         grid_dir: directory path of grid to be read in
 
     Output:
         Operates on MITprofs directly 
     """
-    # Assign parameter values based on the run_code
-    if run_code == 90:
-        # llc model grid
-        llcN = 90
-        wet_or_all = 1
-    elif run_code == 270:    
-        # llc model grid
-        llcN = 270
-        wet_or_all = 1
-    else: 
-        # wet_or_all
-        # 0: interpolate to nearest wet point
-        # 1: interpolate to all points, regardless of wet or dry
-        wet_or_all = 1
-        # which llc grid to use [90 or 270]
-        llcN = 90
     
     ##  Read in llc grid 
     if llcN == 90:
@@ -260,18 +245,14 @@ def update_prof_and_tile_points_on_profiles(run_code, MITprof, grid_dir):
 
     MITprof['prof_flag'][ins_too_far] = 101
 
-def main(run_code, MITprofs, grid_dir):
+def main(MITprof, grid_dir, llcN, wet_or_all):
 
     print("step01: update_prof_and_tile_points_on_profiles")
-    update_prof_and_tile_points_on_profiles(run_code, MITprofs, grid_dir)
+    update_prof_and_tile_points_on_profiles(MITprof, grid_dir, llcN, wet_or_all)
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-
-    parser.add_argument("-r", "--run_code", action= "store",
-                        help = "Run code: 90 or 270" , dest= "run_code",
-                        type = int, required= True)
 
     parser.add_argument("-g", "--grid_dir", action= "store",
                         help = "File path to 90/270 grids" , dest= "grid_dir",
@@ -284,7 +265,6 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    run_code = args.run_code
     grid_dir = args.grid_dir
     MITprofs_fp = args.MIT_dir
 
@@ -293,5 +273,8 @@ if __name__ == '__main__':
         raise Exception("Invalid NC filepath")
     for file in nc_files:
         MITprofs = MITprof_read(nc_files, 1)
+    
+    llcN = 90                       # Which grid to use, 90 or 270
+    wet_or_all = 1                  # 0 = interpolated to nearest wet point, 1 = interpolated all points, regardless of wet or dry
 
-    main(run_code, MITprofs, grid_dir)
+    main(MITprofs, grid_dir, llcN, wet_or_all)
