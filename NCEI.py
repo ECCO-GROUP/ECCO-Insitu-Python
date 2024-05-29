@@ -26,16 +26,16 @@ def NCEI_pipeline(dest_dir, input_dir):
 
     # Needed paths:
     # Set grid_dir
-    grid_dir = '/home/sweet/Desktop/ECCO-Insitu-Ian/Matlab-Dependents'
+    grid_dir = '/home/sweet/Desktop/Dependents/grid_llc90'
 
     # Path to llc090_sphere_point_n_10242_ids.bin and llc090_sphere_point_n_02562_ids.bin
-    sphere_bin = '/home/sweet/Desktop/ECCO-Insitu-Ian/Matlab-Dependents/grid_llc90/sphere_point_distribution'
+    sphere_bin = '/home/sweet/Desktop/Dependents/sphere_point_distribution'
 
     # Path to WOA13_v2_TS_clim_merged_with_potential_T.nc
-    clim_dir = '/home/sweet/Desktop/ECCO-Insitu-Ian/Matlab-Dependents/TS Climatology'
+    clim_dir = '/home/sweet/Desktop/Dependents/TS_climatology'
 
     # Path to Salt_sigma_smoothed_method_02_masked_merged_capped_extrapolated.bin and Theta_sigma_smoothed_method_02_masked_merged_capped_extrapolated.bin
-    CTD_TS_bin = '/home/sweet/Desktop/ECCO-Insitu-Ian/Matlab-Dependents/CTD sigma TS/'
+    CTD_TS_bin = '/home/sweet/Desktop/Dependents/CTD_sigma_TS'
 
     # Step 1: update_prof_and_tile_points_on_profiles
     llcN = 90                       # Which grid to use, 90 or 270

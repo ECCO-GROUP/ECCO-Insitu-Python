@@ -7,7 +7,7 @@ from scipy.interpolate import griddata
 
 def MITprof_write_to_nc(dest_dir, MITprofs, step, basename):
 
-    print("Writing NETCDF files")
+    print("Writing NETCDF files {}".format(basename))
 
     df_HHMMSS = xr.DataArray(MITprofs['prof_HHMMSS'], dims = ['iPROF'],                                
                             attrs=dict(
@@ -930,11 +930,8 @@ def load_llc90_grid(grootdir, step):
     BATHY_CODE = 0
 
     if BATHY_CODE == 0:
-        bathy_90_fname = os.path.join(grootdir, 'grid_llc90', 'bathy_eccollc_90x50_min2pts.bin')
+        bathy_90_fname = os.path.join(grootdir, 'bathy_eccollc_90x50_min2pts.bin')
 
-    if BATHY_CODE == 1:
-        bathy_90_fname = os.path.join('/home/sweet/Desktop/ECCO-Insitu-Ian/Matlab-Dependents', 'grid_llc90', 'bathy_with_ice_shelf','BATHY_ICE_SHELF_CAVITY_PLUS_ICE_FRONT_LLC_0090.bin')
-    
     if step == 1 or step == 2:
         llcN = 90 # in matlab
         siz = [llcN, 13*llcN, 1]
@@ -946,8 +943,8 @@ def load_llc90_grid(grootdir, step):
             bathy_90 = bathy_90.reshape((siz[0], siz[1], siz[2]))
         blank_90 = np.full_like(bathy_90, np.nan)
         
-        XC_path = os.path.join(grootdir, 'grid_llc90', 'no_blank', 'XC.data')
-        YC_path = os.path.join(grootdir, 'grid_llc90', 'no_blank', 'YC.data')
+        XC_path = os.path.join(grootdir, 'no_blank', 'XC.data')
+        YC_path = os.path.join(grootdir, 'no_blank', 'YC.data')
         with open(XC_path, 'rb') as fid:
             lon_90 = np.fromfile(fid, dtype=mform)
             # order F: populates column first instead of default Python via row
@@ -959,7 +956,7 @@ def load_llc90_grid(grootdir, step):
             lat_90 = lat_90.reshape((siz[0], siz[1], siz[2]))
 
         if step == 1:
-            hFacC_90_path = os.path.join(grootdir, 'grid_llc90', 'hFacC.data')
+            hFacC_90_path = os.path.join(grootdir, 'hFacC.data')
             siz = [llcN, 13*llcN, 50]
             with open(hFacC_90_path, 'rb') as fid:
                 hFacC_90 = np.fromfile(fid, dtype=mform)
@@ -987,8 +984,8 @@ def load_llc90_grid(grootdir, step):
         siz = [llcN, 13*llcN, 1]
         mform = '>f4' # 'ieee-be' corresponds to f4
 
-        XC_path = os.path.join(grootdir, 'grid_llc90', 'no_blank', 'XC.data')
-        YC_path = os.path.join(grootdir, 'grid_llc90', 'no_blank', 'YC.data')
+        XC_path = os.path.join(grootdir, 'no_blank', 'XC.data')
+        YC_path = os.path.join(grootdir, 'no_blank', 'YC.data')
         with open(XC_path, 'rb') as fid:
             lon_90 = np.fromfile(fid, dtype=mform)
             # order F: populates column first instead of default Python via row
@@ -1008,7 +1005,7 @@ def load_llc90_grid(grootdir, step):
         AI_90 = np.arange(0, lon_90.size)
         AI_90 = AI_90.reshape(lon_90.shape, order = 'F')
 
-        hFacC_90_path = os.path.join(grootdir, 'grid_llc90', 'hFacC.data')
+        hFacC_90_path = os.path.join(grootdir,'hFacC.data')
         siz = [llcN, 13*llcN, 50]
         with open(hFacC_90_path, 'rb') as fid:
             hFacC_90 = np.fromfile(fid, dtype=mform)
@@ -1029,7 +1026,7 @@ def load_llc90_grid(grootdir, step):
         siz = [llcN, 13*llcN, 1]
         mform = '>f4' # 'ieee-be' corresponds to f4
 
-        RAC90_path = os.path.join(grootdir, 'grid_llc90', 'no_blank', 'RAC.data')
+        RAC90_path = os.path.join(grootdir, 'no_blank', 'RAC.data')
         with open(RAC90_path, 'rb') as fid:
             RAC_90 = np.fromfile(fid, dtype=mform)
             RAC_90 = RAC_90.reshape((siz[0], np.prod(siz[1:])), order='F')

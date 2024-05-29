@@ -41,7 +41,7 @@ def createNETCDF(file, dest_dir, prof_desc, prof_HHMMSS, prof_lat, prof_lon, pro
     output_filename_path = os.path.join(dest_dir, output_filename)
     nc = nc4.Dataset(output_filename_path, 'w')
 
-    print("Writing NETCDF file for {}".format(filename))
+    print("Writing NETCDF file for {}".format(filename[0]))
     
     # Set global attributes 
     # NOTE: Date that is processed, where (directory) of CSV data came from
