@@ -1,7 +1,7 @@
 # ECCO-Insitu Processing Pipeline
 Sweet Zhang 5/21/2023
 
-The **NCEI.py** is a python script that is designed to process a NETCDF file that contains WOD data. There are 10 steps included in the pipeline that run various data verification tests to insure data quality.
+The **NCEI.py** is a python script that is designed to process a NETCDF file that contains WOD data. There are 10 steps included in the pipeline that run various data verification tests to insure data quality. The pipeline relies on a number of binary files which can be downloaded [here](https://drive.google.com/drive/folders/17h0qMS7vVimet8FXieGP1mWhnqnY0ljr?usp=sharing), please set the needed paths to these files accordingly.
 
 ## Preprocessing: csv_to_nc.py
 This script creates a set of NETCDF files from a '.csv' file containing WOD data. This script does some preliminary error checks of the following fields: 
@@ -55,20 +55,19 @@ This script creates a set of NETCDF files containing processed data. The steps o
     - Decimates profiles with subdaily sampling at the same location to once-daily sampling
 
 ### Running the script
-Before running the script, there are some input parems to adjust within the function **NCEI_pipeline** located in the **NCEI.py** file. Between lines 25-65, the following paths need to be specified:
+Before running the script, there are some input parems to adjust within the function **NCEI_pipeline** located in the **NCEI.py** file. Between lines 25-65, the following paths pertaining to the binary file set linked above need to be specified:
 - grid_dir
-  - Path to INSERT
+  - Path to grid_llc90 or grid_llc270 folder
 - sphere_bin
-  - Path to llc090_sphere_point_n_10242_ids.bin and llc090_sphere_point_n_02562_ids.bin
+  - Path to sphere_point_distribution folder containing files llc090_sphere_point_n_10242_ids.bin and llc090_sphere_point_n_02562_ids.bin
 - clim_dir
-  - Path to WOA13_v2_TS_clim_merged_with_potential_T.nc
+  - Path to TS_climatology folder containing file WOA13_v2_TS_clim_merged_with_potential_T.nc
 - CTD_TS_bin
-  - Salt_sigma_smoothed_method_02_masked_merged_capped_extrapolated.bin
-  - Theta_sigma_smoothed_method_02_masked_merged_capped_extrapolated.bin
+  - Path to CTD_sigma_TS folder containing files Salt_sigma_smoothed_method_02_masked_merged_capped_extrapolated.bin and Theta_sigma_smoothed_method_02_masked_merged_capped_extrapolated.bin
 
 In addition to these paths, various input parems can be adjusted depending on user specifications.
 Step 1:
-  - **llcN**: this number should correspond to grid_dir
+  - **llcN**: this number should correspond to grid_dir (90 or 270)
   - **wet_or_all**: 0 = interpolated to nearest wet point, 1 = interpolated all points, regardless of wet or dry
     
 Step 4: 
@@ -102,7 +101,7 @@ Output files:
 Example: if input NETCDF name is **ocldb1525460187.4974.CTD_1995.nc**, output filename will be **ocldb15254601874974_step_10_CTD_1995.nc**
 
 ### Example Data
-Please see the **preprocessed_examples** folder for examples of data output
+Please see the **processed_examples** folder for examples of data output
 
 ## Future Tasks
 - [ ] Clean up unpopulated fields in NETCDF files
